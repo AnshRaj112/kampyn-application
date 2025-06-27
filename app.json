@@ -40,7 +40,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "backendUrl": "http://localhost:5001",
+      "backendUrl": "https://kiitbites-backend.onrender.com",
       "router": {},
       "eas": {
         "projectId": "f94c7f57-7d22-4c3c-b063-f38b23ddd576"
