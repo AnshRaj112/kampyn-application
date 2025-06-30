@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
 import {
   Ionicons,
@@ -17,6 +16,7 @@ import {
 import { useRouter } from 'expo-router';
 import { getToken, removeToken } from '../../utils/storage';
 import { config } from '../../config';
+import Toast from 'react-native-toast-message';
 
 const BACKEND_URL = config.backendUrl;
 
@@ -51,7 +51,12 @@ export default function ProfileScreen() {
         }
       } catch (error) {
         console.error('Error fetching user:', error);
-        Alert.alert('Error', 'Failed to fetch user data. Please try again.');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to fetch user data. Please try again.',
+          position: 'bottom',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -61,30 +66,19 @@ export default function ProfileScreen() {
   }, []);
 
   const handleLogout = async () => {
-    // For web, use browser's confirm dialog for consistency
-    if (typeof window !== 'undefined' && !window.confirm('Are you sure you want to log out?')) {
-      return;
-    }
-
-    // For native, use Alert
-    if (typeof window === 'undefined') {
-      Alert.alert('Log Out', 'Are you sure you want to log out?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Log Out', onPress: performLogout },
-      ]);
-    } else {
-      await performLogout();
-    }
+    Toast.show({
+      type: 'info',
+      text1: 'Logging out...',
+      text2: 'You are being logged out.',
+      position: 'bottom',
+    });
+    await performLogout();
   };
 
   const performLogout = async () => {
     try {
       const token = await getToken();
-      
-      // Clear token first to prevent any race conditions
       await removeToken();
-
-      // Try to call the logout endpoint if we have a token
       if (token) {
         try {
           await fetch(`${BACKEND_URL}/api/user/auth/logout`, {
@@ -98,21 +92,22 @@ export default function ProfileScreen() {
           console.warn('Logout API call failed, but proceeding with client-side logout', error);
         }
       }
-
-      // Force a full page reload on web to clear all state
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login/LoginForm';
-      } else {
-        router.replace('/login/LoginForm');
-      }
+      Toast.show({
+        type: 'success',
+        text1: 'Logged out',
+        text2: 'You have been logged out successfully.',
+        position: 'bottom',
+      });
+      router.replace('/login/LoginForm');
     } catch (error) {
       console.error('Logout error:', error);
-      // Final fallback - force redirect even if something went wrong
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login/LoginForm';
-      } else {
-        router.replace('/login/LoginForm');
-      }
+      Toast.show({
+        type: 'error',
+        text1: 'Logout Failed',
+        text2: 'An error occurred during logout.',
+        position: 'bottom',
+      });
+      router.replace('/login/LoginForm');
     }
   };
 
