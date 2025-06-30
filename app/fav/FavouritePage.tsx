@@ -17,8 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import 'react-toastify/dist/ReactToastify.css';
 import { Ionicons } from "@expo/vector-icons";
 import { getToken, removeToken } from "../../utils/storage";
-
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
+import { config } from "../config";
 
 // Interfaces
 interface FoodItem {
@@ -122,7 +121,7 @@ const FavouriteFoodPageContent: React.FC = () => {
           router.push("/login/LoginForm");
           return;
         }
-        const response = await axios.get(`${BACKEND_URL}/api/user/auth/user`, {
+        const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(response.data);
@@ -146,8 +145,8 @@ const FavouriteFoodPageContent: React.FC = () => {
     const fetchColleges = async () => {
       if (!isAuthenticated) return;
       try {
-        const config = await getAuthConfig();
-        const response = await axios.get(`${BACKEND_URL}/api/user/auth/list`, config);
+        const configAuth = await getAuthConfig();
+        const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
         setColleges(response.data);
       } catch (error) {
         console.error("Error fetching colleges:", error);
@@ -162,11 +161,11 @@ const FavouriteFoodPageContent: React.FC = () => {
       if (!isAuthenticated || !user?._id || colleges.length === 0) return;
       try {
         setLoading(true);
-        const config = await getAuthConfig();
+        const configAuth = await getAuthConfig();
         const url = selectedCollege
-          ? `${BACKEND_URL}/fav/${user._id}/${selectedCollege._id}`
-          : `${BACKEND_URL}/fav/${user._id}`;
-        const response = await axios.get(url, config);
+          ? `${config.backendUrl}/fav/${user._id}/${selectedCollege._id}`
+          : `${config.backendUrl}/fav/${user._id}`;
+        const response = await axios.get(url, configAuth);
         
         // Only sort if we have colleges data and no specific college is selected
         const sortedFavorites = selectedCollege 
@@ -191,11 +190,11 @@ const FavouriteFoodPageContent: React.FC = () => {
     const fetchVendors = async () => {
       if (!isAuthenticated || colleges.length === 0) return;
       try {
-        const config = await getAuthConfig();
+        const configAuth = await getAuthConfig();
         if (selectedCollege) {
           const response = await axios.get(
-            `${BACKEND_URL}/api/vendor/list/uni/${selectedCollege._id}`,
-            config
+            `${config.backendUrl}/api/vendor/list/uni/${selectedCollege._id}`,
+            configAuth
           );
           const vendorsMap = response.data.reduce((acc: { [key: string]: string }, vendor: Vendor) => {
             acc[vendor._id] = vendor.name;
@@ -204,7 +203,7 @@ const FavouriteFoodPageContent: React.FC = () => {
           setVendors(vendorsMap);
         } else {
           const vendorPromises = colleges.map((college) =>
-            axios.get(`${BACKEND_URL}/api/vendor/list/uni/${college._id}`, config)
+            axios.get(`${config.backendUrl}/api/vendor/list/uni/${college._id}`, configAuth)
           );
           const responses = await Promise.all(vendorPromises);
           const allVendors = responses.flatMap((res) => res.data);
@@ -226,8 +225,8 @@ const FavouriteFoodPageContent: React.FC = () => {
     const fetchCartItems = async () => {
       if (!isAuthenticated || !user?._id) return;
       try {
-        const config = await getAuthConfig();
-        const response = await axios.get(`${BACKEND_URL}/cart/${user._id}`, config);
+        const configAuth = await getAuthConfig();
+        const response = await axios.get(`${config.backendUrl}/cart/${user._id}`, configAuth);
         const cartData = response.data.cart || [];
         const formattedCartItems = cartData.map((item: CartResponseItem) => ({
           _id: item.itemId,
@@ -280,7 +279,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       const isRetail = categories.retail.includes(itemType);
       const isProduce = categories.produce.includes(itemType);
       const token = await getAuthToken();
-      const response = await fetch(`${BACKEND_URL}/items/vendors/${itemId}`, {
+      const response = await fetch(`${config.backendUrl}/items/vendors/${itemId}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -353,29 +352,29 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       if (existingItem) {
         await axios.post(
-          `${BACKEND_URL}/cart/add-one/${user._id}`,
+          `${config.backendUrl}/cart/add-one/${user._id}`,
           {
             itemId: foodItem._id,
             kind: foodItem.kind,
-            vendorId: foodItem.vendorId,
+            vendorId: foodItem.vendorId
           },
           await getAuthConfig()
         );
       } else {
         await axios.post(
-          `${BACKEND_URL}/cart/add/${user._id}`,
+          `${config.backendUrl}/cart/add/${user._id}`,
           {
             itemId: foodItem._id,
             kind: foodItem.kind,
             quantity: 1,
-            vendorId: foodItem.vendorId,
+            vendorId: foodItem.vendorId
           },
           await getAuthConfig()
         );
       }
 
       const response = await axios.get(
-        `${BACKEND_URL}/cart/${user._id}`,
+        `${config.backendUrl}/cart/${user._id}`,
         await getAuthConfig()
       );
 
@@ -452,19 +451,19 @@ const FavouriteFoodPageContent: React.FC = () => {
         return;
       }
 
-      const config = await getAuthConfig();
+      const configAuth = await getAuthConfig();
 
       await axios.post(
-        `${BACKEND_URL}/cart/add-one/${user._id}`,
+        `${config.backendUrl}/cart/add-one/${user._id}`,
         {
           itemId: foodItem._id,
           kind: foodItem.kind,
           vendorId: foodItem.vendorId
         },
-        config
+        configAuth
       );
 
-      const response = await axios.get(`${BACKEND_URL}/cart/${user._id}`, config);
+      const response = await axios.get(`${config.backendUrl}/cart/${user._id}`, configAuth);
       const cartData = response.data.cart || [];
 
       const formattedCartItems = cartData.map((item: CartResponseItem) => ({
@@ -519,22 +518,22 @@ const FavouriteFoodPageContent: React.FC = () => {
 
   const handleDecreaseQuantity = async (foodItem: FoodItem) => {
     if (!user?._id) return;
-    const config = await getAuthConfig();
+    const configAuth = await getAuthConfig();
 
     try {
       await axios.post(
-        `${BACKEND_URL}/cart/remove-one/${user._id}`,
+        `${config.backendUrl}/cart/remove-one/${user._id}`,
         {
           itemId: foodItem._id,
           kind: foodItem.kind,
           vendorId: foodItem.vendorId
         },
-        config
+        configAuth
       );
 
       const response = await axios.get(
-        `${BACKEND_URL}/cart/${user._id}`,
-        await getAuthConfig()
+        `${config.backendUrl}/cart/${user._id}`,
+        configAuth
       );
 
       const cartData = response.data.cart || [];
@@ -579,7 +578,7 @@ const FavouriteFoodPageContent: React.FC = () => {
 
     try {
       await axios.post(
-        `${BACKEND_URL}/cart/clear/${user._id}`,
+        `${config.backendUrl}/cart/clear/${user._id}`,
         {},
         await getAuthConfig()
       );
