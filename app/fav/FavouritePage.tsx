@@ -697,7 +697,7 @@ const FavouriteFoodPageContent: React.FC = () => {
             </View>
           ) : (
             <View style={styles.foodGrid}>
-              {favorites.map((food) => {
+              {favorites.map((food, idx) => {
                 const matchingCartItem = cartItems.find(
                   (item) => item._id === food._id && item.vendorId === food.vendorId
                 );
@@ -707,7 +707,7 @@ const FavouriteFoodPageContent: React.FC = () => {
                 const isInCart = quantity > 0;
 
                 return (
-                  <View key={`${food._id}-${food.vendorId}`} style={styles.foodCard}>
+                  <View key={`${food._id}-${food.vendorId || ''}-${idx}`} style={styles.foodCard}>
                     <Image
                       source={{ uri: food.image }}
                       style={styles.foodImage}
