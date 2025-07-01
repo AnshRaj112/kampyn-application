@@ -18,6 +18,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Ionicons } from "@expo/vector-icons";
 import { getToken, removeToken } from "../../utils/storage";
 import { config } from "../config";
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { CustomToast } from '../CustomToast';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+
 
 // Interfaces
 interface FoodItem {
@@ -91,6 +96,10 @@ const FavouriteFoodPageContent: React.FC = () => {
   const [currentVendorId, setCurrentVendorId] = useState<string | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+
+  const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
 
   const getAuthToken = async () => {
     try {
@@ -166,15 +175,15 @@ const FavouriteFoodPageContent: React.FC = () => {
           ? `${config.backendUrl}/fav/${user._id}/${selectedCollege._id}`
           : `${config.backendUrl}/fav/${user._id}`;
         const response = await axios.get(url, configAuth);
-        
+
         // Only sort if we have colleges data and no specific college is selected
-        const sortedFavorites = selectedCollege 
-          ? response.data.favourites 
+        const sortedFavorites = selectedCollege
+          ? response.data.favourites
           : response.data.favourites.sort((a: FoodItem, b: FoodItem) => {
-              const collegeA = colleges.find(c => c._id === a.uniId)?.fullName || '';
-              const collegeB = colleges.find(c => c._id === b.uniId)?.fullName || '';
-              return collegeA.localeCompare(collegeB);
-            });
+            const collegeA = colleges.find(c => c._id === a.uniId)?.fullName || '';
+            const collegeB = colleges.find(c => c._id === b.uniId)?.fullName || '';
+            return collegeA.localeCompare(collegeB);
+          });
         setFavorites(sortedFavorites);
       } catch (error) {
         console.error("Error fetching favorites:", error);
@@ -184,6 +193,60 @@ const FavouriteFoodPageContent: React.FC = () => {
     };
     fetchFavorites();
   }, [user?._id, selectedCollege, isAuthenticated, colleges]);
+
+  // handleToggleFavorite function
+  const handleToggleFavorite = async (food: FoodItem) => {
+    const userId = user?._id;
+    if (!userId) return;
+
+    const kind = food.kind;
+    const itemId = food._id;
+    const vendorId = food.vendorId;
+    const favKey = `${itemId}-${vendorId}`;
+    const isAlreadyFav = favoriteIds.includes(favKey);
+
+    try {
+      // Optimistically update the UI
+      setFavoriteIds((prev) =>
+        isAlreadyFav ? prev.filter((id) => id !== favKey) : [...prev, favKey]
+      );
+
+      // Make PATCH request
+      const res = await fetch(
+        `${BACKEND_URL}/fav/${userId}/${itemId}/${kind}/${vendorId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to update favorite");
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: isAlreadyFav ? 'Removed from favorites' : 'Added to favorites',
+      });
+    } catch (err) {
+      console.error(err);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Something went wrong',
+      });
+
+      // Revert UI if error
+      setFavoriteIds((prev) =>
+        isAlreadyFav ? [...prev, favKey] : prev.filter((id) => id !== favKey)
+      );
+    }
+  };
+
+
+
 
   // Fetch vendors
   useEffect(() => {
@@ -606,167 +669,206 @@ const FavouriteFoodPageContent: React.FC = () => {
     router.back();
   };
 
+
   return (
-    <ScrollView style={styles.container}>
-      <Toast />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+        <Toast />
+        <View style={styles.header}>
+          {/* <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#4ea199" />
           <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your Favorites</Text>
-        {!isCartEmpty() && (
+        </TouchableOpacity> */}
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color="#4ea199" />
+          </TouchableOpacity>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+
+            <Text style={styles.headerTitle}>Your Favorites</Text>
+          </View>
+          <View style={{ width: 32 }} />
+          {/* {!isCartEmpty() && (
           <TouchableOpacity onPress={clearCart} style={styles.clearCartButton}>
             <Text style={styles.clearCartButtonText}>Clear Cart</Text>
           </TouchableOpacity>
-        )}
-      </View>
-
-      {checkingAuth ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#000" />
+        )} */}
         </View>
-      ) : !isAuthenticated ? (
-        <View style={styles.centered}>
-          <Text>Please log in to view your favorites</Text>
-        </View>
-      ) : (
-        <>
-          <View style={styles.dropdownContainer}>
-            <TouchableOpacity
-              style={styles.dropdownButton}
-              onPress={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              <Text style={styles.dropdownButtonText}>
-                {selectedCollege ? selectedCollege.fullName : "Select your college"}
-              </Text>
-              <ChevronDown
-                size={20}
-                style={{
-                  transform: [{ rotate: isDropdownOpen ? "180deg" : "0deg" }],
-                }}
-              />
-            </TouchableOpacity>
 
-            {isDropdownOpen && (
-              <View style={styles.dropdownMenu}>
-                <Pressable
-                  style={styles.dropdownItem}
-                  onPress={() => handleCollegeSelect(null)}
+        {checkingAuth ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color="#000" />
+          </View>
+        ) : !isAuthenticated ? (
+          <View style={styles.centered}>
+            <Text>Please log in to view your favorites</Text>
+          </View>
+        ) : (
+          <>
+            {
+
+              <View style={styles.dropdownContainer}>
+                <TouchableOpacity
+                  style={styles.dropdownButton}
+                  onPress={() => setIsDropdownOpen(!isDropdownOpen)}
                 >
-                  <Text style={styles.dropdownItemText}>All Colleges</Text>
-                  <ChevronRight size={16} />
-                </Pressable>
-                {colleges.map((college) => (
-                  <Pressable
-                    key={college._id}
-                    style={styles.dropdownItem}
-                    onPress={() => handleCollegeSelect(college)}
-                  >
-                    <Text style={styles.dropdownItemText}>{college.fullName}</Text>
-                    <ChevronRight size={16} />
-                  </Pressable>
-                ))}
+                  <Text style={styles.dropdownButtonText}>
+                    {selectedCollege ? selectedCollege.fullName : "Select your college"}
+                  </Text>
+                  <ChevronDown
+                    size={20}
+                    style={{
+                      transform: [{ rotate: isDropdownOpen ? "180deg" : "0deg" }],
+                    }}
+                  />
+                </TouchableOpacity>
+
+                {isDropdownOpen && (
+                  <View style={styles.dropdownMenu}>
+                    <Pressable
+                      style={styles.dropdownItem}
+                      onPress={() => handleCollegeSelect(null)}
+                    >
+                      <Text style={styles.dropdownItemText}>All Colleges</Text>
+                      <ChevronRight size={16} />
+                    </Pressable>
+
+                    {colleges.map((college) => (
+                      <Pressable
+                        key={college._id}
+                        style={styles.dropdownItem}
+                        onPress={() => handleCollegeSelect(college)}
+                      >
+                        <Text style={styles.dropdownItemText}>{college.fullName}</Text>
+                        <ChevronRight size={16} />
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
+            }
+
+
+
+
+
+            <View style={styles.collegeHeader}>
+              <Text style={styles.collegeName}>
+                {selectedCollege ? selectedCollege.fullName : "All Colleges"}
+              </Text>
+              <Text style={styles.subTitle}>Your Favorites</Text>
+            </View>
+
+            {loading ? (
+              <View style={styles.centered}>
+                <ActivityIndicator size="large" color="#000" />
+              </View>
+            ) : favorites.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>Oops! You have no favorites yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  Start adding your favorite items to see them here!
+                </Text>
+                <TouchableOpacity
+                  style={styles.homeButton}
+                  onPress={() => router.push("/")}
+                >
+                  <Text style={styles.homeButtonText}>Go to Home</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.foodGrid}>
+                {favorites.map((food, idx) => {
+                  const matchingCartItem = cartItems.find(
+                    (item) => item._id === food._id && item.vendorId === food.vendorId
+                  );
+
+                  const quantity = matchingCartItem?.quantity || 0;
+                  const isSameVendor = !currentVendorId || currentVendorId === food.vendorId;
+                  const isInCart = quantity > 0;
+
+                  const favKey = `${food._id}-${food.vendorId}`;
+                  const isFavorited = favoriteIds.includes(favKey);
+
+
+                  return (
+                    <View key={`${food._id}-${food.vendorId || ''}-${idx}`} style={styles.foodCard}>
+                      <View style={styles.imageWrapper}>
+                        <Image
+                          source={{ uri: food.image }}
+                          style={styles.foodImage}
+                          resizeMode="cover"
+                        />
+                        {!selectedCollege && (
+                          <View style={styles.collegeTag}>
+                            <Text style={styles.collegeTagText}>
+                              {colleges.find((c) => c._id === food.uniId)?.fullName}
+                            </Text>
+                          </View>
+                        )}
+                      
+
+                        <TouchableOpacity onPress={() => handleToggleFavorite(food)} style={styles.favButton}>
+                        
+                          <Icon
+                            name={isFavorited ? 'heart-o' : 'heart'}
+                            size={24}
+                            color="#4ea199"
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+
+                      <Text style={styles.foodName}>{food.name}</Text>
+                      <Text style={styles.vendorName}>
+                        {food.vendorName || "Unknown Vendor"}
+                      </Text>
+                      <Text style={styles.foodPrice}>₹{food.price}</Text>
+                      {isInCart && isSameVendor ? (
+                        <View style={styles.quantityControls}>
+                          <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={() => handleDecreaseQuantity(food)}
+                          >
+                            <Minus size={16} />
+                          </TouchableOpacity>
+                          <Text style={styles.quantity}>{quantity}</Text>
+                          <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={() => handleIncreaseQuantity(food)}
+                          >
+                            <Plus size={16} />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.addToCartButton,
+                            !isSameVendor && styles.disabledButton
+                          ]}
+                          onPress={() => handleAddToCart(food)}
+                          disabled={!isSameVendor}
+                        >
+                          <Text style={[
+                            styles.addToCartText,
+                            !isSameVendor && styles.disabledButtonText
+                          ]}>
+                            {!isSameVendor ? "Different Vendor" : "Add to Cart"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
               </View>
             )}
-          </View>
-
-          <View style={styles.collegeHeader}>
-            <Text style={styles.collegeName}>
-              {selectedCollege ? selectedCollege.fullName : "All Colleges"}
-            </Text>
-            <Text style={styles.subTitle}>Your Favorites</Text>
-          </View>
-
-          {loading ? (
-            <View style={styles.centered}>
-              <ActivityIndicator size="large" color="#000" />
-            </View>
-          ) : favorites.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Oops! You have no favorites yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Start adding your favorite items to see them here!
-              </Text>
-              <TouchableOpacity
-                style={styles.homeButton}
-                onPress={() => router.push("/")}
-              >
-                <Text style={styles.homeButtonText}>Go to Home</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.foodGrid}>
-              {favorites.map((food, idx) => {
-                const matchingCartItem = cartItems.find(
-                  (item) => item._id === food._id && item.vendorId === food.vendorId
-                );
-
-                const quantity = matchingCartItem?.quantity || 0;
-                const isSameVendor = !currentVendorId || currentVendorId === food.vendorId;
-                const isInCart = quantity > 0;
-
-                return (
-                  <View key={`${food._id}-${food.vendorId || ''}-${idx}`} style={styles.foodCard}>
-                    <Image
-                      source={{ uri: food.image }}
-                      style={styles.foodImage}
-                      resizeMode="cover"
-                    />
-                    {!selectedCollege && (
-                      <View style={styles.collegeTag}>
-                        <Text style={styles.collegeTagText}>
-                          {colleges.find((c) => c._id === food.uniId)?.fullName}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={styles.foodName}>{food.name}</Text>
-                    <Text style={styles.vendorName}>
-                      {food.vendorName || "Unknown Vendor"}
-                    </Text>
-                    <Text style={styles.foodPrice}>₹{food.price}</Text>
-                    {isInCart && isSameVendor ? (
-                      <View style={styles.quantityControls}>
-                        <TouchableOpacity
-                          style={styles.quantityButton}
-                          onPress={() => handleDecreaseQuantity(food)}
-                        >
-                          <Minus size={16} />
-                        </TouchableOpacity>
-                        <Text style={styles.quantity}>{quantity}</Text>
-                        <TouchableOpacity
-                          style={styles.quantityButton}
-                          onPress={() => handleIncreaseQuantity(food)}
-                        >
-                          <Plus size={16} />
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        style={[
-                          styles.addToCartButton,
-                          !isSameVendor && styles.disabledButton
-                        ]}
-                        onPress={() => handleAddToCart(food)}
-                        disabled={!isSameVendor}
-                      >
-                        <Text style={[
-                          styles.addToCartText,
-                          !isSameVendor && styles.disabledButtonText
-                        ]}>
-                          {!isSameVendor ? "Different Vendor" : "Add to Cart"}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </>
-      )}
-    </ScrollView>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
+
+
+
 };
 
 const styles = StyleSheet.create({
@@ -777,25 +879,43 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+   
     justifyContent: 'space-between',
     marginBottom: 24,
+    marginRight: 10,
+    alignItems: 'flex-start',
+    // flexDirection: 'column',
+    // alignItems: 'center',
+    // marginBottom: 24,
+    // marginTop: 10,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    padding: 1,
+    marginBottom: 10,
+    // marginLeft: 3,
+
   },
   backText: {
-    marginLeft: 4,
+    marginLeft: 3,
     fontSize: 16,
     color: '#4ea199',
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 40,
     fontWeight: 'bold',
-    color: '#4ea199',
+    //margin: 0,
+    textAlign: "left",
+    color: "#4ea199",
+    textShadowColor: "rgba(78, 161, 153, 0.2)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    alignSelf: 'center',
+    marginTop: 30,
+    paddingLeft: 5
+
   },
   clearCartButton: {
     backgroundColor: '#dc2626',
@@ -809,10 +929,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   dropdownContainer: {
-    maxWidth: 600,
-    alignSelf: 'center',
-    marginBottom: 24,
-    zIndex: 1000,
+
+    zIndex: 10,
+
+    maxWidth: 600, 
+    width: '100%', 
+    marginTop: 0,
+    marginBottom: 48, 
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    position: 'relative',
+
+
+
   },
   dropdownButton: {
     width: '100%',
@@ -829,7 +958,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    zIndex: 1000,
+    zIndex: 9999,
+
+
   },
   dropdownButtonText: {
     fontSize: 16,
@@ -871,17 +1002,33 @@ const styles = StyleSheet.create({
   },
   collegeHeader: {
     marginBottom: 16,
-    alignItems: 'center',
+
+    alignSelf: 'flex-start',
+    alignItems: 'flex-start',
+    marginRight: 20
   },
   collegeName: {
-    fontSize: 22,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#4ea199',
+
+    textShadowColor: "rgba(78, 161, 153, 0.2)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    marginVertical: 0,
+    marginHorizontal: 0,
+
   },
   subTitle: {
-    fontSize: 16,
+    fontSize: 19.2,
     fontWeight: '600',
-    color: '#6b7280',
+    color: '#4ea199',
+
+    textShadowColor: "rgba(78, 161, 153, 0.2)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    margin: 0,
+
   },
   foodGrid: {
     flexDirection: 'row',
@@ -890,15 +1037,19 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   foodCard: {
+
     backgroundColor: '#e5e7eb',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    width: '48%',
+    width: '100%',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
+  },
+  imageWrapper: {
+    position: 'relative',
   },
   foodImage: {
     width: '100%',
@@ -907,12 +1058,22 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   collegeTag: {
+    // backgroundColor: '#4ea199',
+    // paddingVertical: 4,
+    // paddingHorizontal: 8,
+    // borderRadius: 6,
+    // alignSelf: 'flex-start',
+    // marginBottom: 8,
+    // //marginTop:5
+
+    position: 'absolute',
+    top: 8,
+    left: 8,
     backgroundColor: '#4ea199',
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 6,
-    alignSelf: 'flex-start',
-    marginBottom: 8,
+    zIndex: 1,
   },
   collegeTagText: {
     color: '#fff',
@@ -924,6 +1085,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: 4,
+    
   },
   vendorName: {
     fontSize: 14,
@@ -1014,6 +1176,26 @@ const styles = StyleSheet.create({
   disabledButtonText: {
     color: '#999',
   },
+  favButton: {
+    padding: 8,
+    borderRadius: 20,
+    fontSize: 24,
+
+
+
+    alignSelf: 'flex-end'
+
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginTop: 10
+  },
+
+
 });
 
 export default FavouriteFoodPageContent;
+
