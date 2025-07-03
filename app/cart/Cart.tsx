@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet, Text } from "react-native";
+import { View, ScrollView, StyleSheet, Text,useWindowDimensions } from "react-native";
 import axios from "axios";
 import CartItemCard from "@/app/components/CartItemCard"; 
 import ExtrasCard from "@/app/components/ExtrasCard"; 
+import BillBox from "../components/BillBox";
 import Toast from "react-native-toast-message";
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigation } from "@react-navigation/native";
@@ -18,6 +19,8 @@ import {  Platform } from 'react-native';
 
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
+const { width } = useWindowDimensions();
+const isMobile = width < 1100;
 
 
 interface ExtraItem {
@@ -51,14 +54,14 @@ interface ExtrasResponse {
 interface GuestCartItem extends Omit<CartItem, 'category'> {
   kind: string;
 }
- const getAuthToken = async () => {
-    try {
-      return await getToken();
-    } catch (error) {
-      console.error("Error getting token from storage:", error);
-      return null;
-    }
-  };
+//  const getAuthToken = async () => {
+//     try {
+//       return await getToken();
+//     } catch (error) {
+//       console.error("Error getting token from storage:", error);
+//       return null;
+//     }
+//   };
 
 export const getAuthHeaders = async () => {
   try {
@@ -93,7 +96,7 @@ export default function CartScreen() {
   const [userData, setUserData] = useState<{ _id: string; foodcourtId: string } | null>(null);
     //const [filteredExtras, setFilteredExtras] = useState<FoodItem[]>([]);
 
-  const navigation = useNavigation();
+ // const navigation = useNavigation();
    const router = useRouter();
 
 
@@ -635,11 +638,22 @@ const addToCart = async (item: FoodItem) => {
         )}
       </ScrollView>
 
+      <View style={styles.cartPage}>
+      {/* Left-side items & extras can go here if needed */}
+
       {cart.length > 0 && userData && (
         <View style={styles.cartRight}>
-          
+          <BillBox
+            userId={userData._id}
+            items={cart}
+            onOrder={(orderId) => {
+              console.log("Payment successful! Order ID: " + orderId);
+              // clear cart, redirect, etc.
+            }}
+          />
         </View>
       )}
+    </View>
     </View>
   );
 };
@@ -743,5 +757,18 @@ const styles = StyleSheet.create({
           shadowOpacity: 0.1,
           shadowRadius: 8,
         }),
+  },
+
+  cartPage: {
+    flexDirection: isMobile ? "column" : "row",
+    justifyContent: "space-between",
+    alignItems: isMobile ? "center" : "flex-start",
+    paddingHorizontal: isMobile ? 16 : 48, 
+    paddingTop: isMobile ? 64 : 100,        
+    paddingBottom: 16,
+    backgroundColor: "#f0f4f8",
+    gap: 32,
+    flexWrap: "wrap",
+    overflow: "hidden", 
   },
 });
