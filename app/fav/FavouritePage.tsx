@@ -342,7 +342,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       const isRetail = categories.retail.includes(itemType);
       const isProduce = categories.produce.includes(itemType);
       const token = await getAuthToken();
-      const response = await fetch(`${config.backendUrl}/items/vendors/${itemId}`, {
+      const response = await fetch(`${config.backendUrl}/api/item/vendors/${itemId}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
