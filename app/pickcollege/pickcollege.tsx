@@ -23,7 +23,7 @@ export default function PickCollege() {
 
   const handleSelectCollege = (college: string) => {
     router.push({
-      pathname: '/signup/SignupStep1',
+      pathname: '/signup/SignupForm',
       params: { college },
     });
   };
