@@ -12,10 +12,11 @@ import {
     ActivityIndicator,
     findNodeHandle,
     UIManager,
+    Platform,
 } from "react-native";
 import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react-native";
 import axios from "axios";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, usePathname } from "expo-router";
 import { CustomToast } from '../CustomToast';
 import 'react-toastify/dist/ReactToastify.css';
 import Toast from "react-native-toast-message";
@@ -43,6 +44,7 @@ interface OrderItem {
 interface ActiveOrder {
     _id: string;
     orderId: string;
+    orderNumber: string;
     orderType: string;
     status: string;
     createdAt: string;
@@ -76,6 +78,15 @@ interface User {
 const ActiveOrdersPageContent: React.FC = () => {
     const router = useRouter();
     const searchParams = useLocalSearchParams();
+    const pathname = usePathname();
+    let navigationState: any;
+    if (Platform.OS !== 'web') {
+      try {
+        navigationState = useRootNavigationState();
+      } catch (e) {
+        navigationState = undefined;
+      }
+    }
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [selectedCollege, setSelectedCollege] = useState<College | null>(null);
     const [colleges, setColleges] = useState<College[]>([]);
@@ -151,13 +162,15 @@ useEffect(() => {
 
     // Fetch user
     useEffect(() => {
+        if (Platform.OS !== 'web' && (!navigationState || !navigationState.key)) return;
+
         const fetchUserDetails = async () => {
             try {
                 setCheckingAuth(true);
                 const token = await getAuthToken();
                 if (!token) {
                     setIsAuthenticated(false);
-                    router.push("/login/LoginForm");
+                    router.replace("/login/LoginForm");
                     return;
                 }
                 const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
@@ -170,14 +183,14 @@ useEffect(() => {
                 if (axios.isAxiosError(error) && error.response?.status === 403) {
                     await removeToken();
                     setIsAuthenticated(false);
-                    router.push("/login/LoginForm");
+                    router.replace("/login/LoginForm");
                 }
             } finally {
                 setCheckingAuth(false);
             }
         };
         fetchUserDetails();
-    }, []);
+    }, [navigationState]);
     // Fetch colleges
     useEffect(() => {
         const fetchColleges = async () => {
@@ -202,8 +215,8 @@ useEffect(() => {
                 setLoading(true);
                 const configAuth = await getAuthConfig();
                 const url = selectedCollege
-                    ? `${BACKEND_URL}/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
-                    : `${BACKEND_URL}/order/user-active/${user._id}`;
+                    ? `${config.backendUrl}/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
+                    : `${config.backendUrl}/order/user-active/${user._id}`;
 
                 const response = await axios.get(url, configAuth);
                 console.log('Active orders response:', response.data);
@@ -224,7 +237,7 @@ useEffect(() => {
 
     // Handle URL query parameter on initial load
     useEffect(() => {
-        const { college: collegeId } = searchParams; // useLocalSearchParams gives you an object
+        const { college: collegeId } = searchParams;
 
         if (collegeId && colleges.length > 0) {
             const college = colleges.find((c) => c._id === collegeId);
@@ -233,8 +246,7 @@ useEffect(() => {
             }
         } else {
             setSelectedCollege(null);
-
-            router.replace('/activeorders/ActiveOrders'); // or current route path
+            // Removed router.replace to prevent infinite reload
         }
     }, [searchParams, colleges]);
     const handleTouchOutside = (event: any) => {
@@ -286,10 +298,6 @@ useEffect(() => {
             hour: '2-digit',
             minute: '2-digit'
         });
-    };
-
-    const formatOrderId = (orderId: string) => {
-        return orderId.slice(-8).toUpperCase();
     };
 
     const getStatusColor = (status: string) => {
@@ -367,7 +375,7 @@ useEffect(() => {
             ) : activeOrders.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyTitle}>No active orders found</Text>
-                    <p> You don't have any active orders at the moment.</p>
+                    <Text>You don't have any active orders at the moment.</Text>
 
 
                     {/* <TouchableOpacity
@@ -391,7 +399,7 @@ useEffect(() => {
                             <View style={styles.orderHeader}>
                                 <View>
                                     <Text style={styles.orderId}>
-                                        Order #{formatOrderId(order.orderId)}
+                                        Order #{order.orderNumber && order.orderNumber !== 'Unknown' ? order.orderNumber : order.orderId}
                                     </Text>
                                     <Text>{formatDate(order.createdAt)}</Text>
                                     {order.vendorId && (

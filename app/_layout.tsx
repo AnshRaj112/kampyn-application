@@ -1,4 +1,4 @@
-import { Redirect, Stack } from "expo-router";
+import { Stack, Slot } from "expo-router";
   
 export default function RootLayout() {
   return (
@@ -7,7 +7,9 @@ export default function RootLayout() {
         headerShown: false,
         animation: 'slide_from_right'
       }}
-    />
+    >
+      <Slot />
+    </Stack>
   );
 } 
 

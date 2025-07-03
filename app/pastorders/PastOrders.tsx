@@ -1,4 +1,4 @@
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, usePathname } from "expo-router";
 import { getToken, removeToken } from "../../utils/storage";
 import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
@@ -11,12 +11,14 @@ import { useNavigation } from '@react-navigation/native'; // React Navigation ho
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-   Modal
+   Modal,
+   Platform
 } from "react-native";
 import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react-native";
 import { CustomToast } from '../CustomToast';
 import 'react-toastify/dist/ReactToastify.css';
 import Toast from "react-native-toast-message";
+import { useRootNavigationState } from 'expo-router';
 const { college: collegeId } = useLocalSearchParams();
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
@@ -33,6 +35,7 @@ interface OrderItem {
 interface PastOrder {
   _id: string;
   orderId: string;
+  orderNumber: string;
   orderType: string;
   status: string;
   createdAt: string;
@@ -93,6 +96,19 @@ const PastOrdersPageContent: React.FC = () => {
           };
       };
 
+  const [navigationReady, setNavigationReady] = useState(Platform.OS === 'web');
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      try {
+        const navState = useRootNavigationState?.();
+        if (navState?.key) setNavigationReady(true);
+      } catch (e) {
+        setNavigationReady(false);
+      }
+    }
+  }, []);
+
   // Fetch user details
 useEffect(() => {
         const fetchUserDetails = async () => {
@@ -121,7 +137,7 @@ useEffect(() => {
             }
         };
         fetchUserDetails();
-    }, []);
+    }, [navigationReady]);
 
 // Fetch colleges
     useEffect(() => {
@@ -147,8 +163,8 @@ useEffect(() => {
     try {
       setLoading(true);
       const url = selectedCollege
-        ? `${BACKEND_URL}/order/past/${user._id}?collegeId=${selectedCollege._id}`
-        : `${BACKEND_URL}/order/past/${user._id}`;
+        ? `${config.backendUrl}/order/past/${user._id}?collegeId=${selectedCollege._id}`
+        : `${config.backendUrl}/order/past/${user._id}`;
 
       const response = await axios.get(url, await getAuthConfig());
       console.log('Past orders response:', response.data);
@@ -172,7 +188,7 @@ useEffect(() => {
     const fetchColleges = async () => {
       try {
         const response = await axios.get(
-          `${BACKEND_URL}/api/user/auth/list`,
+          `${config.backendUrl}/api/user/auth/list`,
          await getAuthConfig()
         );
         setColleges(response.data);
@@ -195,8 +211,8 @@ useEffect(() => {
       try {
         setLoading(true);
         const url = selectedCollege
-          ? `${BACKEND_URL}/order/past/${user._id}?collegeId=${selectedCollege._id}`
-          : `${BACKEND_URL}/order/past/${user._id}`;
+          ? `${config.backendUrl}/order/past/${user._id}?collegeId=${selectedCollege._id}`
+          : `${config.backendUrl}/order/past/${user._id}`;
 
         const response = await axios.get(url, await getAuthConfig());
         console.log('Past orders response:', response.data);
@@ -214,6 +230,7 @@ useEffect(() => {
     fetchPastOrders();
   }, [user?._id, selectedCollege, router]);
   // Handle URL query parameter on initial load
+  const pathname = usePathname();
   useEffect(() => {
   if (collegeId && colleges.length > 0) {
     const college = colleges.find((c) => c._id === collegeId);
@@ -222,12 +239,12 @@ useEffect(() => {
     }
   } else {
     setSelectedCollege(null);
-
-    // Remove 'college' from URL by resetting route without it
-    const params = new URLSearchParams();
-    router.replace({ pathname: '/login/LoginForm',params: {},});
+    // Only replace if not already on the correct path
+    if (pathname !== '/pastorders/PastOrders') {
+      router.replace('/pastorders/PastOrders');
+    }
   }
-}, [collegeId, colleges]);
+}, [collegeId, colleges, pathname]);
 
   // Close dropdown when clicking outside
 
@@ -259,10 +276,6 @@ useEffect(() => {
     });
   };
   
-  const formatOrderId = (orderId: string) => {
-    return orderId.slice(-8).toUpperCase();
-  };
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'delivered':
@@ -351,7 +364,7 @@ useEffect(() => {
             <View style={styles.orderCard}>
               <View style={styles.orderHeader}>
                 <View style={styles.orderInfo}>
-                  <Text style={styles.orderId}>Order #{formatOrderId(order.orderId)}</Text>
+                  <Text style={styles.orderId}>Order #{order.orderNumber && order.orderNumber !== 'Unknown' ? order.orderNumber : order.orderId}</Text>
                   <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
                   {order.vendorId && (
                     <View style={styles.orderSource}>

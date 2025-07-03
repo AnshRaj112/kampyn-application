@@ -163,10 +163,40 @@ export default function ProfileScreen() {
         )}
       </View>
 
-        <View style={styles.card}>
-        <TouchableOpacity style={styles.item}>
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => router.push('/cart')}
+        >
           <MaterialIcons name="shopping-cart" size={20} color="#5B96F0" />
           <Text style={styles.itemText}>Cart</Text>
+          <Ionicons name="chevron-forward" size={20} color="#777" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => router.push('/activeorders')}
+        >
+          <MaterialIcons name="assignment" size={20} color="#10b981" />
+          <Text style={styles.itemText}>Active Orders</Text>
+          <Ionicons name="chevron-forward" size={20} color="#777" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => router.push('/pastorders')}
+        >
+          <MaterialIcons name="history" size={20} color="#3b82f6" />
+          <Text style={styles.itemText}>Past Orders</Text>
+          <Ionicons name="chevron-forward" size={20} color="#777" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => router.push('/payment')}
+        >
+          <Feather name="credit-card" size={20} color="#f59e42" />
+          <Text style={styles.itemText}>Payment</Text>
           <Ionicons name="chevron-forward" size={20} color="#777" />
         </TouchableOpacity>
 

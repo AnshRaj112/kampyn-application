@@ -1,24 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet, Text,useWindowDimensions } from "react-native";
+import { View, ScrollView, StyleSheet, Text,useWindowDimensions, Button } from "react-native";
 import axios from "axios";
-import CartItemCard from "@/app/components/CartItemCard"; 
-import ExtrasCard from "@/app/components/ExtrasCard"; 
+import CartItemCard from "../components/CartItemCard"; 
+import ExtrasCard from "../components/ExtrasCard"; 
 import BillBox from "../components/BillBox";
-import Toast from "react-native-toast-message";
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { FoodItem, CartItem } from "@/types/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getToken, removeToken } from "../../utils/storage";
 import { TouchableOpacity } from 'react-native';
 import { useRouter } from "expo-router";
 import {  Platform } from 'react-native';
+import { config } from "../../config";
 
 
 
 
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
+// IMPORTANT: Replace '192.168.1.42' with your computer's local IP address for mobile access
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://192.168.1.42:5001";
 const { width } = useWindowDimensions();
 const isMobile = width < 1100;
 
@@ -89,6 +91,26 @@ export const getVendorName = (vendorName: string | undefined) => {
   }
   return vendorName;
 };
+
+const toastConfig = {
+  success: (props: any) => (
+    <BaseToast
+      {...props}
+      style={{ zIndex: 2147483647 }}
+      contentContainerStyle={{ paddingHorizontal: 15 }}
+      text1Style={{ fontSize: 15, fontWeight: '400' }}
+    />
+  ),
+  error: (props: any) => (
+    <ErrorToast
+      {...props}
+      style={{ zIndex: 2147483647 }}
+      text1Style={{ fontSize: 15 }}
+      text2Style={{ fontSize: 13 }}
+    />
+  ),
+};
+
 export default function CartScreen() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [extras, setExtras] = useState<FoodItem[]>([]);
@@ -99,103 +121,109 @@ export default function CartScreen() {
  // const navigation = useNavigation();
    const router = useRouter();
 
+  // Move fetchExtras here so it can be used by fetchUserAndCart
+  const fetchExtras = async (userId?: string) => {
+    if (!userId && !userData?._id) return;
+    const id = userId || userData?._id;
+    try {
+      const response = await axios.get<ExtrasResponse>(
+        `${config.backendUrl}/cart/extras/${id}`,
+        await getAuthHeaders()
+      );
+      const formatted: FoodItem[] = response.data.extras.map((e: ExtraItem) => ({
+        _id: e.itemId,
+        name: e.name,
+        image: e.image,
+        price: e.price,
+        kind: e.kind,
+      }));
+      setExtras(formatted);
+    } catch (err) {
+      console.error("Error loading extras:", err);
+      setExtras([]);
+    }
+  };
 
-  useEffect(() => {
-    const fetchExtras = async () => {
-      if (!userData?._id) return;
+  // Move fetchUserAndCart here so it can access all state setters
+  const fetchUserAndCart = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      console.log("[Cart] Token on mobile:", token);
 
-      try {
-        const response = await axios.get<ExtrasResponse>(
-          `${BACKEND_URL}/cart/extras/${userData._id}`,
-          await getAuthHeaders()
-        );
-        const formatted: FoodItem[] = response.data.extras.map((e: ExtraItem) => ({
-          _id: e.itemId,
-          name: e.name,
-          image: e.image,
-          price: e.price,
-          kind: e.kind,
-        }));
-        setExtras(formatted);
-      } catch (err) {
-        console.error("Error loading extras:", err);
-        setExtras([]);
+      if (!token) {
+        setUserLoggedIn(false);
+        const rawGuest = await AsyncStorage.getItem("guest_cart") || "[]";
+        console.log("[Cart] Guest cart from AsyncStorage:", rawGuest);
+        const guestCart = JSON.parse(rawGuest);
+        setCart(guestCart);
+        return;
       }
-    };
 
-    const fetchUserAndCart = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+        credentials: "include",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        if (!token) {
-          setUserLoggedIn(false);
-          const rawGuest = await AsyncStorage.getItem("guest_cart") || "[]";
-          const guestCart = JSON.parse(rawGuest) as GuestCartItem[];
-          const guestCartWithCategory: CartItem[] = guestCart.map((item) => ({
-            ...item,
-            category: item.kind === "Retail" ? "Retail" : "Produce"
-          }));
-          setCart(guestCartWithCategory);
-          return;
-        }
+      if (!res.ok) {
+        await AsyncStorage.removeItem("token");
+        setUserLoggedIn(false);
+        const rawGuest = await AsyncStorage.getItem("guest_cart") || "[]";
+        console.log("[Cart] Guest cart from AsyncStorage (after token fail):", rawGuest);
+        setCart(JSON.parse(rawGuest));
+        return;
+      }
 
-        const res = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          credentials: "include",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      const user = await res.json();
+      setUserLoggedIn(true);
+      setUserData(user);
 
-        if (!res.ok) {
-          await AsyncStorage.removeItem("token");
-          setUserLoggedIn(false);
-          const rawGuest = await AsyncStorage.getItem("guest_cart") || "[]";
-          setCart(JSON.parse(rawGuest));
-          return;
-        }
+      const cartRes = await axios.get<CartResponse>(
+        `${config.backendUrl}/cart/${user._id}`,
+        await getAuthHeaders()
+      );
 
-        const user = await res.json();
-        setUserLoggedIn(true);
-        setUserData(user);
-
-        const cartRes = await axios.get<CartResponse>(
-          `${BACKEND_URL}/cart/${user._id}`,
-          await getAuthHeaders()
-        );
-
-        const rawCart = cartRes.data.cart || [];
-        const detailedCart: CartItem[] = rawCart.map((c) => ({
+      const rawCart = cartRes.data.cart || [];
+      console.log("[Cart] Raw cart from backend:", rawCart);
+      const detailedCart: CartItem[] = rawCart.map((c) => ({
+        _id: c.itemId,
+        userId: user._id,
+        foodcourtId: user.foodcourtId,
+        itemId: {
           _id: c.itemId,
-          userId: user._id,
-          foodcourtId: user.foodcourtId,
-          itemId: {
-            _id: c.itemId,
-            name: c.name,
-            price: c.price,
-            image: c.image,
-            kind: c.kind,
-          },
-          quantity: c.quantity,
-          kind: c.kind,
           name: c.name,
           price: c.price,
           image: c.image,
-          vendorName: cartRes.data.vendorName,
-          vendorId: cartRes.data.vendorId,
-         // category: c.kind === "Retail" ? "Retail" : "Produce",
-         category: (c.kind === "Retail" ? "Retail" : "Produce") as "Retail" | "Produce",
+          kind: c.kind,
+        },
+        quantity: c.quantity,
+        kind: c.kind,
+        name: c.name,
+        price: c.price,
+        image: c.image,
+        vendorName: cartRes.data.vendorName,
+        vendorId: cartRes.data.vendorId,
+        category: (c.kind === "Retail" ? "Retail" : "Produce") as "Retail" | "Produce",
+      }));
 
-        }));
+      setCart(detailedCart);
+      await fetchExtras(user._id);
+    } catch (error) {
+      console.error("[Cart] Error in fetchUserAndCart():", error);
+      await AsyncStorage.removeItem("token");
+      setUserLoggedIn(false);
+    }
+  };
 
-        setCart(detailedCart);
-        await fetchExtras();
-      } catch (error) {
-        console.error("Error in fetchUserAndCart():", error);
-        await AsyncStorage.removeItem("token");
-        setUserLoggedIn(false);
-      }
-    };
-
+  useEffect(() => {
     fetchUserAndCart();
   }, []);
+
+  // Refresh cart every time the screen is focused (mobile only)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserAndCart();
+    }, [])
+  );
 
  // Add a new useEffect to refetch extras when cart changes
  useEffect(() => {
@@ -207,7 +235,7 @@ export default function CartScreen() {
             userData._id
           );
           const response = await axios.get<ExtrasResponse>(
-            `${BACKEND_URL}/cart/extras/${userData._id}`,
+            `${config.backendUrl}/cart/extras/${userData._id}`,
            await getAuthHeaders()
           );
 
@@ -244,11 +272,11 @@ export default function CartScreen() {
 
       console.log(
         '[Cart.tsx] ▶︎ reFetchCart → GET',
-        `${BACKEND_URL}/cart/${userData._id}`
+        `${config.backendUrl}/cart/${userData._id}`
       );
 
       const cartRes = await axios.get<CartResponse>(
-        `${BACKEND_URL}/cart/${userData._id}`,
+        `${config.backendUrl}/cart/${userData._id}`,
         await getAuthHeaders()
       );
 
@@ -300,12 +328,12 @@ const increaseQty = async (id: string) => {
     );
 
     try {
-      const config = await getAuthHeaders();
+      const authConfig = await getAuthHeaders();
 
       await axios.post(
-        `${BACKEND_URL}/cart/add-one/${userData._id}`,
+        `${config.backendUrl}/cart/add-one/${userData._id}`,
         { itemId: id, kind: thisItem.kind },
-        config
+        authConfig
       );
 
       console.log("[Cart.tsx] ← /cart/add-one succeeded, re-fetching cart");
@@ -377,7 +405,7 @@ const decreaseQty = async (id: string) => {
       const headers = await getAuthHeaders(); // Ensure getAuthHeaders() is async if using AsyncStorage
 
       await axios.post(
-        `${BACKEND_URL}/cart/remove-one/${userData._id}`,
+        `${config.backendUrl}/cart/remove-one/${userData._id}`,
         { itemId: id, kind: thisItem.kind },
         headers
       );
@@ -432,7 +460,7 @@ const removeItem = async (id: string) => {
       const headers = await getAuthHeaders();
 
       await axios.post(
-        `${BACKEND_URL}/cart/remove-item/${userData._id}`,
+        `${config.backendUrl}/cart/remove-item/${userData._id}`,
         { itemId: id, kind: thisItem.kind },
         headers
       );
@@ -490,7 +518,7 @@ const addToCart = async (item: FoodItem) => {
       const headers = await getAuthHeaders();
 
       await axios.post(
-        `${BACKEND_URL}/cart/add/${userData._id}`,
+        `${config.backendUrl}/cart/add/${userData._id}`,
         {
           itemId: item._id,
           kind: item.kind,
@@ -584,35 +612,74 @@ const addToCart = async (item: FoodItem) => {
     (extra) => !cart.some((cartItem) => cartItem._id === extra._id)
   );
 
+  // TEMP DEBUG: Add a test item to guest cart
+  const addTestItemToGuestCart = async () => {
+    const testItem = {
+      _id: 'test123',
+      userId: 'guest',
+      foodcourtId: 'guest',
+      itemId: {
+        _id: 'test123',
+        name: 'Test Item',
+        price: 99,
+        image: '',
+        kind: 'Retail',
+      },
+      quantity: 1,
+      kind: 'Retail',
+      name: 'Test Item',
+      price: 99,
+      image: '',
+      vendorName: 'guest',
+      vendorId: 'guest',
+      category: 'Retail',
+    };
+    const rawGuest = await AsyncStorage.getItem('guest_cart') || '[]';
+    const guestCart = JSON.parse(rawGuest);
+    guestCart.push(testItem);
+    await AsyncStorage.setItem('guest_cart', JSON.stringify(guestCart));
+    setCart(guestCart);
+    console.log('[Cart] Added test item to guest cart:', guestCart);
+  };
+
  return (
     <View style={styles.container}>
-      <Toast />
+      <Toast position="bottom" config={toastConfig} />
+      {/* TEMP DEBUG BUTTON: Add test item to guest cart */}
+      {/* <Button title="Add Test Item to Guest Cart" onPress={addTestItemToGuestCart} /> */}
       <ScrollView contentContainerStyle={styles.cartLeft}>
+        {/* Debug info */}
         {cart.length === 0 ? (
           <View style={styles.emptyCartMessage}>
             <Text style={styles.emptyTitle}>Oops! Your cart is empty</Text>
-            <Text style={styles.emptyText}>Looks like you haven’t added any items yet.</Text>
+            <Text style={styles.emptyText}>Looks like you haven't added any items yet.</Text>
             <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/help/HelpPage')}>
               <Text style={styles.buttonText}>Go to Home</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <View style={styles.vendorInfo}>
+            <View style={[styles.vendorInfo, {borderWidth: 1, borderColor: '#f00'}]}>
               <Text style={styles.vendorText}>Vendor: {getVendorName(cart[0]?.vendorName)}</Text>
             </View>
 
-            {cart.map((item) => (
-              <CartItemCard 
-              key={item._id} 
-              item={item} 
-               onIncrease={() => increaseQty(item._id)}
+            {/* Cart items scrollable section */}
+            <View style={{ height: 350, maxHeight: 400, marginBottom: 16, ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}) }}>
+              <ScrollView>
+                {cart.map((item) => (
+                  <View key={item._id} style={{ minHeight: 80, marginVertical: 4 }}>
+                    <CartItemCard 
+                      item={item} 
+                      onIncrease={() => increaseQty(item._id)}
                       onDecrease={() => decreaseQty(item._id)}
                       onRemove={() => removeItem(item._id)}
-              />
-            ))}
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
 
-            <View style={styles.extrasSection}>
+            <View style={[styles.extrasSection, {borderWidth: 1, borderColor: '#00f'}]}>
               <Text style={styles.sectionTitle}>More from {getVendorName(cart[0]?.vendorName)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.extrasList}>
                 {filteredExtras.length > 0 ? (
@@ -625,7 +692,7 @@ const addToCart = async (item: FoodItem) => {
                         onAdd={addToCart}
                         onIncrease={increaseQty}
                         onDecrease={decreaseQty}
-                         quantity={cartItem?.quantity || 0}
+                        quantity={cartItem?.quantity || 0}
                       />
                     );
                   })
@@ -634,26 +701,23 @@ const addToCart = async (item: FoodItem) => {
                 )}
               </ScrollView>
             </View>
+
+            {/* Move BillBox here */}
+            {cart.length > 0 && userData && (
+              <View style={[styles.cartRight, {borderWidth: 1, borderColor: '#fa0'}]}>
+                <BillBox
+                  userId={userData._id}
+                  items={cart}
+                  onOrder={(orderId) => {
+                    console.log("Payment successful! Order ID: " + orderId);
+                    // clear cart, redirect, etc.
+                  }}
+                />
+              </View>
+            )}
           </>
         )}
       </ScrollView>
-
-      <View style={styles.cartPage}>
-      {/* Left-side items & extras can go here if needed */}
-
-      {cart.length > 0 && userData && (
-        <View style={styles.cartRight}>
-          <BillBox
-            userId={userData._id}
-            items={cart}
-            onOrder={(orderId) => {
-              console.log("Payment successful! Order ID: " + orderId);
-              // clear cart, redirect, etc.
-            }}
-          />
-        </View>
-      )}
-    </View>
     </View>
   );
 };
@@ -664,10 +728,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f4f8',
     paddingTop: 100,
     paddingHorizontal: 20,
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}),
   },
   cartLeft: {
-    flexGrow: 1,
-    gap: 20,
+    paddingBottom: 40,
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}),
   },
   emptyCartMessage: {
     alignItems: 'center',
@@ -676,6 +741,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     marginVertical: 20,
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}),
   },
   emptyTitle: {
     fontSize: 22,
@@ -694,6 +760,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}),
   },
   buttonText: {
     color: 'white',
@@ -704,6 +771,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}),
   },
   vendorText: {
     color: '#4ea199',
@@ -715,6 +783,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginTop: 20,
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}),
   },
   sectionTitle: {
     fontSize: 18,
@@ -725,50 +794,27 @@ const styles = StyleSheet.create({
   extrasList: {
     flexDirection: 'row',
     gap: 15,
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}),
   },
   emptyExtras: {
     color: '#888',
   },
-  // cartRight: {
-  //   backgroundColor: '#fff',
-  //   borderRadius: 12,
-  //   padding: 20,
-  //   marginTop: 20,
-  //   shadowColor: '#000',
-  //   shadowOffset: { width: 0, height: 2 },
-  //   shadowOpacity: 0.1,
-  //   shadowRadius: 8,
-  //   elevation: 5,
-  // },
-
   cartRight: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
     marginTop: 20,
-    elevation: Platform.OS === 'android' ? 5 : 0,
     ...(Platform.OS === 'web'
       ? {
-          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+          zIndex: 0,
+          position: 'relative',
         }
       : {
+          elevation: 5,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.1,
           shadowRadius: 8,
         }),
-  },
-
-  cartPage: {
-    flexDirection: isMobile ? "column" : "row",
-    justifyContent: "space-between",
-    alignItems: isMobile ? "center" : "flex-start",
-    paddingHorizontal: isMobile ? 16 : 48, 
-    paddingTop: isMobile ? 64 : 100,        
-    paddingBottom: 16,
-    backgroundColor: "#f0f4f8",
-    gap: 32,
-    flexWrap: "wrap",
-    overflow: "hidden", 
   },
 });
