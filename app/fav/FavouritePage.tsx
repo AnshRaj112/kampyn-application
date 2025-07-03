@@ -8,11 +8,12 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react-native";
 import axios from "axios";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import Toast from "react-native-toast-message";
+import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import 'react-toastify/dist/ReactToastify.css';
 import { Ionicons } from "@expo/vector-icons";
@@ -80,6 +81,43 @@ interface CartResponseItem {
 const categories = {
   produce: ["combos-veg", "combos-nonveg", "veg", "shakes", "juices", "soups", "non-veg"],
   retail: ["biscuits", "chips", "icecream", "drinks", "snacks", "sweets", "nescafe"],
+};
+
+const toastConfig = {
+  success: (props: any) => (
+    <BaseToast
+      {...props}
+      style={
+        Platform.OS === 'web'
+          ? {
+              position: 'fixed',
+              right: 20,
+              bottom: 20,
+              left: 'auto',
+              width: 350,
+              zIndex: 99999,
+            }
+          : {}
+      }
+    />
+  ),
+  error: (props: any) => (
+    <ErrorToast
+      {...props}
+      style={
+        Platform.OS === 'web'
+          ? {
+              position: 'fixed',
+              right: 20,
+              bottom: 20,
+              left: 'auto',
+              width: 350,
+              zIndex: 99999,
+            }
+          : {}
+      }
+    />
+  ),
 };
 
 const FavouriteFoodPageContent: React.FC = () => {
@@ -673,7 +711,7 @@ const FavouriteFoodPageContent: React.FC = () => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
-        <Toast />
+        <Toast position="bottom" config={toastConfig} />
         <View style={styles.header}>
           {/* <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#4ea199" />

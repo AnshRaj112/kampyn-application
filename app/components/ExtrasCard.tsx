@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { FoodItem } from "../../types/types";
 import { Minus, Plus } from "lucide-react-native";
 
@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: "center",
     margin: 8,
+    ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative', boxShadow: 'none' } : {}),
   },
   image: {
     width: "100%",

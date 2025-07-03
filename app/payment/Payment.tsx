@@ -1,4 +1,4 @@
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useRootNavigationState } from "expo-router";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { getToken, removeToken } from "../../utils/storage";
@@ -8,10 +8,10 @@ import{
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-
+    Platform
 }from "react-native";
+import { config } from "../config";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
 interface OrderItem {
   name: string;
   price: number;
@@ -48,68 +48,81 @@ const PaymentPage = () => {
   const router = useRouter();
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [navigationReady, setNavigationReady] = useState(Platform.OS === 'web');
 
-   // Get auth token
-   const getAuthToken = async () => {
-          try {
-              return await getToken();
-          } catch (error) {
-              console.error("Error getting token from storage:", error);
-              return null;
-          }
-      };
-
-  // Configure axios with auth header
-   const getAuthConfig = async () => {
-        const token = await getAuthToken();
-        return {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        };
-    };
-      // Fetch order details
-
-useEffect(() => {
-  const fetchOrderDetails = async () => {
-    if (!orderId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Step 1: Fetch logged-in user data
-      const userResponse = await axios.get(
-        `${BACKEND_URL}/api/user/auth/user`,
-        await getAuthConfig()
-      );
-      const userId = userResponse.data._id;
-
-      // Step 2: Fetch all active orders for that user
-      const orderResponse = await axios.get(
-        `${BACKEND_URL}/order/user-active/${userId}`,
-       await getAuthConfig()
-      );
-
-      // Step 3: Find the specific order by ID
-      const order = orderResponse.data.orders.find(
-        (order: OrderDetails) => order._id === orderId
-      );
-
-      if (order) {
-        setOrderDetails(order);
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      try {
+        const navState = useRootNavigationState?.();
+        if (navState?.key) setNavigationReady(true);
+      } catch (e) {
+        setNavigationReady(false);
       }
+    }
+  }, []);
+
+  // Get auth token
+  const getAuthToken = async () => {
+    try {
+      return await getToken();
     } catch (error) {
-      console.error("Error fetching order details:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error getting token from storage:", error);
+      return null;
     }
   };
 
-  fetchOrderDetails();
-}, [orderId]);
+  // Configure axios with auth header
+  const getAuthConfig = async () => {
+    const token = await getAuthToken();
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  };
 
-    const formatDate = (dateString: string) => {
+  // Fetch order details
+  useEffect(() => {
+    if (!navigationReady) return;
+    const fetchOrderDetails = async () => {
+      if (!orderId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Step 1: Fetch logged-in user data
+        const userResponse = await axios.get(
+          `${config.backendUrl}/api/user/auth/user`,
+          await getAuthConfig()
+        );
+        const userId = userResponse.data._id;
+
+        // Step 2: Fetch all active orders for that user
+        const orderResponse = await axios.get(
+          `${config.backendUrl}/order/user-active/${userId}`,
+          await getAuthConfig()
+        );
+
+        // Step 3: Find the specific order by ID
+        const order = orderResponse.data.orders.find(
+          (order: OrderDetails) => order._id === orderId
+        );
+
+        if (order) {
+          setOrderDetails(order);
+        }
+      } catch (error) {
+        console.error("Error fetching order details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [navigationReady]);
+
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -119,7 +132,8 @@ useEffect(() => {
       minute: '2-digit'
     });
   };
-   if (loading) {
+
+  if (loading) {
     return (
       <View style={styles.container}>
         <Text style={styles.loading}>Loading order details...</Text>
@@ -199,10 +213,10 @@ useEffect(() => {
       </TouchableOpacity>
     </ScrollView>
   );
+};
 
-
-}
 export default PaymentPage;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
