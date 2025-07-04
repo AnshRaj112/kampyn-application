@@ -9,6 +9,7 @@ import {
   Image,
   ActivityIndicator,
   Platform,
+  RefreshControl,
 } from "react-native";
 import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react-native";
 import axios from "axios";
@@ -22,6 +23,7 @@ import { config } from "../config";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { CustomToast } from '../CustomToast';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 
@@ -135,6 +137,7 @@ const FavouriteFoodPageContent: React.FC = () => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
 
   const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
@@ -158,79 +161,142 @@ const FavouriteFoodPageContent: React.FC = () => {
   };
 
   // Fetch user
-  useEffect(() => {
-    const fetchUserDetails = async () => {
-      try {
-        setCheckingAuth(true);
-        const token = await getAuthToken();
-        if (!token) {
-          setIsAuthenticated(false);
-          router.push("/login/LoginForm");
-          return;
-        }
-        const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error("Error fetching user details:", error);
-        if (axios.isAxiosError(error) && error.response?.status === 403) {
-          await removeToken();
-          setIsAuthenticated(false);
-          router.push("/login/LoginForm");
-        }
-      } finally {
-        setCheckingAuth(false);
+  const fetchUserDetails = async () => {
+    try {
+      setCheckingAuth(true);
+      const token = await getAuthToken();
+      if (!token) {
+        setIsAuthenticated(false);
+        router.push("/login/LoginForm");
+        return;
       }
-    };
+      const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(response.data);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        await removeToken();
+        setIsAuthenticated(false);
+        router.push("/login/LoginForm");
+      }
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
+
+  // Fetch colleges
+  const fetchColleges = async () => {
+    if (!isAuthenticated) return;
+    try {
+      const configAuth = await getAuthConfig();
+      const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
+      setColleges(response.data);
+    } catch (error) {
+      console.error("Error fetching colleges:", error);
+    }
+  };
+
+  // Fetch cart
+  const fetchCartItems = async () => {
+    if (!isAuthenticated || !user?._id) return;
+    try {
+      const configAuth = await getAuthConfig();
+      const response = await axios.get(`${config.backendUrl}/cart/${user._id}`, configAuth);
+      const cartData = response.data.cart || [];
+      const formattedCartItems = cartData.map((item: CartResponseItem) => ({
+        _id: item.itemId,
+        quantity: item.quantity,
+        kind: item.kind,
+        vendorId: item.vendorId || response.data.vendorId,
+        vendorName: item.vendorName || response.data.vendorName,
+      }));
+      setCartItems(formattedCartItems);
+      if (formattedCartItems.length > 0) {
+        setCurrentVendorId(formattedCartItems[0].vendorId);
+      } else {
+        setCurrentVendorId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching cart items:", error);
+    }
+  };
+
+  // Fetch vendors
+  const fetchVendors = async () => {
+    if (!isAuthenticated || colleges.length === 0) return;
+    try {
+      const configAuth = await getAuthConfig();
+      if (selectedCollege) {
+        const response = await axios.get(
+          `${config.backendUrl}/api/vendor/list/uni/${selectedCollege._id}`,
+          configAuth
+        );
+        const vendorsMap = response.data.reduce((acc: { [key: string]: string }, vendor: Vendor) => {
+          acc[vendor._id] = vendor.name;
+          return acc;
+        }, {});
+        setVendors(vendorsMap);
+      } else {
+        const vendorPromises = colleges.map((college) =>
+          axios.get(`${config.backendUrl}/api/vendor/list/uni/${college._id}`, configAuth)
+        );
+        const responses = await Promise.all(vendorPromises);
+        const allVendors = responses.flatMap((res) => res.data);
+        const vendorsMap = allVendors.reduce((acc: { [key: string]: string }, vendor: Vendor) => {
+          if (!acc[vendor._id]) acc[vendor._id] = vendor.name;
+          return acc;
+        }, {});
+        setVendors(vendorsMap);
+      }
+    } catch (error) {
+      console.error("Error fetching vendors:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchUserDetails();
   }, []);
 
-  // Fetch colleges
   useEffect(() => {
-    const fetchColleges = async () => {
-      if (!isAuthenticated) return;
-      try {
-        const configAuth = await getAuthConfig();
-        const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
-        setColleges(response.data);
-      } catch (error) {
-        console.error("Error fetching colleges:", error);
-      }
-    };
     fetchColleges();
   }, [isAuthenticated]);
 
-  // Fetch favorites
   useEffect(() => {
-    const fetchFavorites = async () => {
-      if (!isAuthenticated || !user?._id || colleges.length === 0) return;
-      try {
-        setLoading(true);
-        const configAuth = await getAuthConfig();
-        const url = selectedCollege
-          ? `${config.backendUrl}/fav/${user._id}/${selectedCollege._id}`
-          : `${config.backendUrl}/fav/${user._id}`;
-        const response = await axios.get(url, configAuth);
+    fetchCartItems();
+  }, [user?._id, isAuthenticated]);
 
-        // Only sort if we have colleges data and no specific college is selected
-        const sortedFavorites = selectedCollege
-          ? response.data.favourites
-          : response.data.favourites.sort((a: FoodItem, b: FoodItem) => {
+  useEffect(() => {
+    fetchVendors();
+  }, [selectedCollege, colleges, isAuthenticated]);
+
+  // Move fetchFavorites out of useEffect so it can be reused
+  const fetchFavorites = async () => {
+    if (!isAuthenticated || !user?._id || colleges.length === 0) return;
+    try {
+      setLoading(true);
+      const configAuth = await getAuthConfig();
+      const url = selectedCollege
+        ? `${config.backendUrl}/fav/${user._id}/${selectedCollege._id}`
+        : `${config.backendUrl}/fav/${user._id}`;
+      const response = await axios.get(url, configAuth);
+      const sortedFavorites = selectedCollege
+        ? response.data.favourites
+        : response.data.favourites.sort((a: FoodItem, b: FoodItem) => {
             const collegeA = colleges.find(c => c._id === a.uniId)?.fullName || '';
             const collegeB = colleges.find(c => c._id === b.uniId)?.fullName || '';
             return collegeA.localeCompare(collegeB);
           });
-        setFavorites(sortedFavorites);
-      } catch (error) {
-        console.error("Error fetching favorites:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFavorites();
-  }, [user?._id, selectedCollege, isAuthenticated, colleges]);
+      setFavorites(sortedFavorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   // handleToggleFavorite function
   const handleToggleFavorite = async (food: FoodItem) => {
@@ -282,83 +348,6 @@ const FavouriteFoodPageContent: React.FC = () => {
       );
     }
   };
-
-
-
-
-  // Fetch vendors
-  useEffect(() => {
-    const fetchVendors = async () => {
-      if (!isAuthenticated || colleges.length === 0) return;
-      try {
-        const configAuth = await getAuthConfig();
-        if (selectedCollege) {
-          const response = await axios.get(
-            `${config.backendUrl}/api/vendor/list/uni/${selectedCollege._id}`,
-            configAuth
-          );
-          const vendorsMap = response.data.reduce((acc: { [key: string]: string }, vendor: Vendor) => {
-            acc[vendor._id] = vendor.name;
-            return acc;
-          }, {});
-          setVendors(vendorsMap);
-        } else {
-          const vendorPromises = colleges.map((college) =>
-            axios.get(`${config.backendUrl}/api/vendor/list/uni/${college._id}`, configAuth)
-          );
-          const responses = await Promise.all(vendorPromises);
-          const allVendors = responses.flatMap((res) => res.data);
-          const vendorsMap = allVendors.reduce((acc: { [key: string]: string }, vendor: Vendor) => {
-            if (!acc[vendor._id]) acc[vendor._id] = vendor.name;
-            return acc;
-          }, {});
-          setVendors(vendorsMap);
-        }
-      } catch (error) {
-        console.error("Error fetching vendors:", error);
-      }
-    };
-    fetchVendors();
-  }, [selectedCollege, colleges, isAuthenticated]);
-
-  // Fetch cart
-  useEffect(() => {
-    const fetchCartItems = async () => {
-      if (!isAuthenticated || !user?._id) return;
-      try {
-        const configAuth = await getAuthConfig();
-        const response = await axios.get(`${config.backendUrl}/cart/${user._id}`, configAuth);
-        const cartData = response.data.cart || [];
-        const formattedCartItems = cartData.map((item: CartResponseItem) => ({
-          _id: item.itemId,
-          quantity: item.quantity,
-          kind: item.kind,
-          vendorId: item.vendorId || response.data.vendorId,
-          vendorName: item.vendorName || response.data.vendorName,
-        }));
-        setCartItems(formattedCartItems);
-        if (formattedCartItems.length > 0) {
-          setCurrentVendorId(formattedCartItems[0].vendorId);
-        } else {
-          setCurrentVendorId(null);
-        }
-      } catch (error) {
-        console.error("Error fetching cart items:", error);
-      }
-    };
-    fetchCartItems();
-  }, [user?._id, isAuthenticated]);
-
-  // Handle URL query parameter on initial load
-  useEffect(() => {
-    const collegeId = searchParams.college as string;
-    if (collegeId && colleges.length > 0) {
-      const college = colleges.find((c) => c._id === collegeId);
-      if (college) setSelectedCollege(college);
-    } else {
-      setSelectedCollege(null);
-    }
-  }, [searchParams, colleges]);
 
   const handleCollegeSelect = (college: College | null) => {
     setSelectedCollege(college);
@@ -707,10 +696,32 @@ const FavouriteFoodPageContent: React.FC = () => {
     router.back();
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchFavorites();
+    setRefreshing(false);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Refetch all APIs when the page is focused
+      fetchUserDetails();
+      fetchColleges();
+      fetchFavorites();
+      fetchCartItems();
+      fetchVendors();
+    }, [selectedCollege, user?._id, isAuthenticated, colleges.length])
+  );
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4ea199"]} />
+        }
+      >
         <Toast position="bottom" config={toastConfig} />
         <View style={styles.header}>
           {/* <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -900,6 +911,9 @@ const FavouriteFoodPageContent: React.FC = () => {
               </View>
             )}
           </>
+        )}
+        {refreshing && (
+          <ActivityIndicator size="large" color="#4ea199" style={{ marginTop: 32 }} />
         )}
       </ScrollView>
     </SafeAreaView>
