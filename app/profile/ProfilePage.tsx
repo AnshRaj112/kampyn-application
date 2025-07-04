@@ -202,11 +202,6 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#777" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.item}>
-          <Ionicons name="notifications-outline" size={20} color="#FFA500" />
-          <Text style={styles.itemText}>Notifications</Text>
-          <Ionicons name="chevron-forward" size={20} color="#777" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.card}>
