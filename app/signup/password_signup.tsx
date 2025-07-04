@@ -7,11 +7,20 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
+  Pressable,
+  ActivityIndicator,
+
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useLocalSearchParams, router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { CustomToast } from '../CustomToast';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from "@expo/vector-icons";
+
+
+
 
 export default function SignupStep2() {
   const { name, email, phone, type } = useLocalSearchParams();
@@ -20,6 +29,8 @@ export default function SignupStep2() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const validatePassword = (password: string) => {
     const minLength = /.{8,}/;
@@ -27,7 +38,7 @@ export default function SignupStep2() {
     const lower = /[a-z]/;
     const number = /[0-9]/;
     const special = /[^A-Za-z0-9]/;
-  
+
     return (
       minLength.test(password) &&
       upper.test(password) &&
@@ -36,37 +47,37 @@ export default function SignupStep2() {
       special.test(password)
     );
   };
-  
+
 
   const handleSubmit = () => {
     if (!password || !confirmPassword) {
-       Toast.show({
-                 type: 'error',
-                 text1: 'Validation Error',
-                 text2: 'Please fill in both password fields.',
-                 position: 'bottom',
-               });
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please fill in both password fields.',
+        position: 'bottom',
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-        Toast.show({
-                  type: 'error',
-                  text1: 'Validation Error',
-                  text2: 'Passwords do not match.',
-                  position: 'bottom',
-                });
-     
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Passwords do not match.',
+        position: 'bottom',
+      });
+
       return;
     }
     if (!validatePassword(password)) {
-     
-        Toast.show({
-                  type: 'error',
-                  text1: 'Validation Error',
-                  text2: 'Password must be at least 8 characters long, contain uppercase, lowercase, a number, and a special character',
-                  position: 'bottom',
-                });
+
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Password must be at least 8 characters long, contain uppercase, lowercase, a number, and a special character',
+        position: 'bottom',
+      });
       return;
     }
 
@@ -83,186 +94,210 @@ export default function SignupStep2() {
     (global as any).tempPassword = password;
   };
 
+
   return (
-    <>
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <Text style={styles.title}>Set Password</Text>
-      <Text style={styles.subtitle}>Create your login credentials</Text>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidView}
+      >
+        <View style={styles.box}>
+          <Text style={styles.title}>Sign Up</Text>
 
-      <View style={styles.cardWrapper}>
-        <Text style={styles.label}>PASSWORD</Text>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor="#8a8a8a"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.icon}
-          >
-            <MaterialCommunityIcons
-              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-              size={24}
-              color="#666"
+          <View style={styles.inputGroup}>
+            {/* You can add input fields here if needed */}
+          </View>
+
+          <View style={styles.passwordField}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#8a8a8a"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
             />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.label}>CONFIRM PASSWORD</Text>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor="#8a8a8a"
-            secureTextEntry={!showConfirmPassword}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            style={styles.icon}
-          >
-            <MaterialCommunityIcons
-              name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-              size={24}
-              color="#666"
-            />
-          </TouchableOpacity>
-        </View>
-
-        
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.halfButton]}
-            onPress={() => router.push('/signup/SignupForm')}
-          >
-            <Text style={styles.buttonText}>Back</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.halfButton]}
-            onPress= {handleSubmit}
-          >
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.footer}>
-          Already have an account?{' '}
-          <Text
-            style={styles.login}
-            onPress={() => router.push('/login/LoginForm')}
-          >
-            LOGIN
-          </Text>
-        </Text>
-      </View>
-    </KeyboardAvoidingView>
-      <Toast
-                config={{
-                  error: (props) => <CustomToast {...props} />,
-                  success: (props) => <CustomToast {...props} />,
-                }}
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                size={22}
+                color="#4ea199"
               />
-            </>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.passwordField}>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              placeholderTextColor="#8a8a8a"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                size={22}
+                color="#4ea199"
+              />
+            </TouchableOpacity>
+          </View>
+
+          
+<View style={styles.buttonRow}>
+  <TouchableOpacity
+    onPress={() => router.push('/signup/SignupForm')}
+    disabled={isLoading}
+    style={styles.buttonWrapper}
+  >
+    <LinearGradient
+      colors={['#4ea199', '#6fc3bd']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.button}
+    >
+      {isLoading ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
+        <Text style={styles.buttonText}>Back</Text>
+      )}
+    </LinearGradient>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    onPress={handleSubmit}
+    disabled={isLoading}
+    style={styles.buttonWrapper}
+  >
+    <LinearGradient
+      colors={['#4ea199', '#6fc3bd']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.button}
+    >
+      {isLoading ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
+        <Text style={styles.buttonText}>Next</Text>
+      )}
+    </LinearGradient>
+  </TouchableOpacity>
+</View>
+
+        </View>
+      </KeyboardAvoidingView>
+       <Toast
+        config={{
+          error: (props) => <CustomToast {...props} />,
+          success: (props) => <CustomToast {...props} />,
+        }}
+      />
+
+    </SafeAreaView>
   );
+
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
-    alignItems: 'center',
-    paddingTop: 90,
+    backgroundColor: "#f8fafc",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  keyboardAvoidView: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  box: {
+    backgroundColor: "#e5e7eb",
+    padding: 30,
+    borderRadius: 15,
+    width: "90%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
   },
   title: {
-    color: 'white',
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: "500",
+    marginBottom: 20,
+
+    backgroundClip: "text",
+
   },
-  subtitle: {
-    color: '#B0B0B0',
-    fontSize: 14,
-    marginBottom: 30,
-  },
-  cardWrapper: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: '#F6F6F6',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 22,
-    marginTop: 40,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 14,
-    marginBottom: 6,
-    color: '#333',
-  },
-  inputWrapper: {
-    position: 'relative',
-    backgroundColor: '#EDEDED',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#000',
-    marginBottom: 12,
-    height: 50,
-    justifyContent: 'center',
-    overflow: 'hidden',
+
+  inputGroup: {
+    width: "100%",
+    gap: 10,
+
   },
   input: {
-    paddingLeft: 12,
-    paddingRight: 40,
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    borderColor: "rgba(78,161,153,0.5)",
+    borderWidth: 1,
+    color: "#111",
     fontSize: 16,
-    color: '#111',
-    flex: 1,
-    height: '100%',
+    marginVertical: 6,
+    marginBottom: 20,
   },
-  icon: {
-    position: 'absolute',
+  passwordField: {
+    position: "relative",
+    width: "100%",
+  },
+  eyeIcon: {
+    position: "absolute",
     right: 12,
-    top: 13,
-    zIndex: 1,
+    top: 18,
+  },
+  
+  buttonWrapper: {
+    //width: '100%',
+    borderRadius: 8,
+    overflow: 'hidden',
+    flex:1
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 30,
-    gap: 12, 
-  },
-  halfButton: {
-    width: '40%',
-  },
-  button: {
-    backgroundColor: '#009688',
-    padding: 16,
-    borderRadius: 12,
-  },
-  buttonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  footer: {
-    marginTop: 20,
-    color: '#333',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  login: {
-    color: '#00C2B2',
-    fontWeight: 'bold',
-  },
-});
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  width: '100%',
+  marginTop: 10,
+  gap: 10,
+  //width:'50%'
+},
+ 
+button: {
+  padding: 14,
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: 8,
+  shadowColor: '#4ea199',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 3,
+},
 
+buttonText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: 'bold',
+  textAlign: 'center',
+},
+
+});
