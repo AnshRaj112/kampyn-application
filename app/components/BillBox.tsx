@@ -80,8 +80,20 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
             Alert.alert("Error", "Payment verification failed.");
           }
         })
-        .catch(() => {
-          Alert.alert("Cancelled", "Payment cancelled.");
+        .catch(async () => {
+          try {
+            // Cancel the order and release locks
+            await axios.post(
+              `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
+              {},
+              { withCredentials: true }
+            );
+            
+            Alert.alert("Cancelled", "Payment cancelled. You can try ordering again.");
+          } catch (error) {
+            console.error("Failed to cancel order:", error);
+            Alert.alert("Cancelled", "Payment cancelled, but there was an issue. Please try again in a few minutes.");
+          }
         });
     } catch (err: any) {
       Alert.alert("Error", err?.response?.data?.message || "Failed to place order.");

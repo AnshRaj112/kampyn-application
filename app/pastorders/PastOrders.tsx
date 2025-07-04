@@ -3,7 +3,7 @@ import { getToken, removeToken } from "../../utils/storage";
 import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
 import { config } from "../config";
-import { useNavigation } from '@react-navigation/native'; // React Navigation hookimport {
+import { useNavigation, useFocusEffect } from '@react-navigation/native'; // React Navigation hookimport {
  import{  View,
     LayoutRectangle,
     FlatList,
@@ -12,7 +12,9 @@ import { useNavigation } from '@react-navigation/native'; // React Navigation ho
     ScrollView,
     TouchableOpacity,
    Modal,
-   Platform
+   Platform,
+   RefreshControl,
+   ActivityIndicator
 } from "react-native";
 import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react-native";
 import { CustomToast } from '../CustomToast';
@@ -97,6 +99,7 @@ const PastOrdersPageContent: React.FC = () => {
       };
 
   const [navigationReady, setNavigationReady] = useState(Platform.OS === 'web');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -109,53 +112,54 @@ const PastOrdersPageContent: React.FC = () => {
     }
   }, []);
 
+  // Move fetchUserDetails out of useEffect
+  const fetchUserDetails = async () => {
+    try {
+      setCheckingAuth(true);
+      const token = await getAuthToken();
+      if (!token) {
+        setIsAuthenticated(false);
+        router.push("/login/LoginForm");
+        return;
+      }
+      const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(response.data);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        await removeToken();
+        setIsAuthenticated(false);
+        router.push("/login/LoginForm");
+      }
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
+
+  // Move fetchColleges out of useEffect
+  const fetchColleges = async () => {
+    if (!isAuthenticated) return;
+    try {
+      const configAuth = await getAuthConfig();
+      const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
+      setColleges(response.data);
+    } catch (error) {
+      console.error("Error fetching colleges:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserDetails();
+  }, [navigationReady]);
+
+  useEffect(() => {
+    fetchColleges();
+  }, [isAuthenticated]);
+
   // Fetch user details
-useEffect(() => {
-        const fetchUserDetails = async () => {
-            try {
-                setCheckingAuth(true);
-                const token = await getAuthToken();
-                if (!token) {
-                    setIsAuthenticated(false);
-                    router.push("/login/LoginForm");
-                    return;
-                }
-                const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setUser(response.data);
-                setIsAuthenticated(true);
-            } catch (error) {
-                console.error("Error fetching user details:", error);
-                if (axios.isAxiosError(error) && error.response?.status === 403) {
-                    await removeToken();
-                    setIsAuthenticated(false);
-                    router.push("/login/LoginForm");
-                }
-            } finally {
-                setCheckingAuth(false);
-            }
-        };
-        fetchUserDetails();
-    }, [navigationReady]);
-
-// Fetch colleges
-    useEffect(() => {
-        const fetchColleges = async () => {
-            if (!isAuthenticated) return;
-            try {
-                const configAuth = await getAuthConfig();
-                const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
-                setColleges(response.data);
-            } catch (error) {
-                console.error("Error fetching colleges:", error);
-            }
-        };
-        fetchColleges();
-    }, [isAuthenticated]);
-
-  
- // Fetch user details
 useEffect(() => {
   const fetchPastOrders = async () => {
     if (!user?._id) return;
@@ -289,6 +293,41 @@ useEffect(() => {
     }
   };
   
+  const fetchPastOrders = async () => {
+    if (!user?._id) return;
+    try {
+      setLoading(true);
+      const url = selectedCollege
+        ? `${config.backendUrl}/order/past/${user._id}?collegeId=${selectedCollege._id}`
+        : `${config.backendUrl}/order/past/${user._id}`;
+      const response = await axios.get(url, await getAuthConfig());
+      setPastOrders(response.data.orders || []);
+    } catch (error) {
+      console.error('Error fetching past orders:', error);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        router.push("/login/LoginForm");
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPastOrders();
+    setRefreshing(false);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Refetch all APIs when the page is focused
+      fetchUserDetails();
+      fetchColleges();
+      fetchPastOrders();
+    }, [selectedCollege, user?._id, isAuthenticated])
+  );
+
   return (
     <ScrollView style={styles.container}>
       <Toast />
@@ -343,8 +382,8 @@ useEffect(() => {
       </View>
 
       {/* Conditional Rendering */}
-      {loading ? (
-        <Text style={styles.loadingText}>Loading...</Text>
+      {loading && !refreshing ? (
+        <ActivityIndicator size="large" color="#4ea199" style={{ marginTop: 32 }} />
       ) : pastOrders.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No past orders found</Text>
@@ -407,6 +446,9 @@ useEffect(() => {
             </View>
           )}
           contentContainerStyle={styles.orderGrid}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4ea199"]} />
+          }
         />
       )}
     </ScrollView>
