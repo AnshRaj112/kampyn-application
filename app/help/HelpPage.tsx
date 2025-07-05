@@ -8,11 +8,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  SafeAreaView,
+  Pressable
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { CustomToast } from '../CustomToast';
 import axios from 'axios';
 import { config } from '../../config';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Help() {
   const [name, setName] = useState('');
@@ -74,130 +77,160 @@ export default function Help() {
   };
 
   return (
-    <>
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidView}
       >
-        <Text style={styles.title}>Help</Text>
-        <Text style={styles.subtitle}>Please feel free to ask your queries</Text>
+        <View style={styles.box}>
+          <Text style={styles.Title}>Contact Us</Text>
 
-        <View style={styles.cardWrapper}>
-          <View style={styles.card}>
-            <Text style={styles.label}>NAME</Text>
+          <View style={styles.inputGroup}>
+
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
+              placeholder="Your Name"
               placeholderTextColor="#8a8a8a"
               value={name}
               onChangeText={setName}
             />
-
-            <Text style={styles.label}>EMAIL</Text>
             <TextInput
               style={styles.input}
-              placeholder="example@gmail.com"
+              placeholder="Your Email"
               placeholderTextColor="#8a8a8a"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
             />
-
-            <Text style={styles.label}>MESSAGE</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Your Message"
+ style={styles.messageInput}
+               placeholder="Your Message"
               placeholderTextColor="#8a8a8a"
               value={message}
               onChangeText={setMessage}
+              multiline={true}
+              numberOfLines={5}
+              textAlignVertical="top"
             />
 
-            <TouchableOpacity 
-              style={[styles.button, isLoading && styles.buttonDisabled]} 
-              onPress={handleNext}
-              disabled={isLoading}
+          </View>
+          <Pressable
+            onPress={handleNext}
+            disabled={isLoading}
+            style={styles.buttonWrapper}
+          >
+            <LinearGradient
+              colors={['#4ea199', '#6fc3bd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.Button}
             >
               {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Send</Text>
+                <Text style={styles.ButtonText}>Send</Text>
               )}
-            </TouchableOpacity>
-          </View>
+            </LinearGradient>
+          </Pressable>
+
         </View>
       </KeyboardAvoidingView>
-      <Toast
-        config={{
-          error: (props) => <CustomToast {...props} />,
-          success: (props) => <CustomToast {...props} />,
-        }}
-      />
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
-    alignItems: 'center',
-    paddingTop: 60,
+    backgroundColor: "#f8fafc",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  title: {
-    color: '#FFFFFF',
+  keyboardAvoidView: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  box: {
+    backgroundColor: "#e5e7eb",
+    padding: 30,
+    borderRadius: 15,
+    width: "90%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  Title: {
     fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 6,
+    fontWeight: "500",
+    marginBottom: 20,
+
+    backgroundClip: "text",
+
   },
-  subtitle: {
-    color: '#B0B0B0',
-    fontSize: 16,
-    marginBottom: 28,
-  },
-  cardWrapper: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: '#F6F6F6',
-    borderRadius: 24,
-    padding: 22,
-    justifyContent: 'flex-start',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderBottomLeftRadius: 0,
-    borderBottomEndRadius: 0,
-    marginTop: 40,
-  },
-  card: {
-    flex: 1,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 14,
-    marginBottom: 6,
-    color: '#333333',
+  inputGroup: {
+    width: "100%",
+    gap: 10,
   },
   input: {
-    backgroundColor: '#EDEDED',
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    borderColor: "rgba(78,161,153,0.5)",
+    borderWidth: 1,
+    color: "#111",
+    fontSize: 16,
+    marginVertical: 6,
+    
+  },
+  
+  messageInput: {
+   
+  backgroundColor: "#fff",
+  padding: 12,
+  borderRadius: 8,
+  borderColor: "rgba(78,161,153,0.5)",
+  borderWidth: 1,
+  color: "#111",
+  fontSize: 16,
+  marginVertical: 6,
+  width: "100%",
+  minHeight: 130,  // << increased from 100 to 130
+
+
+  },
+
+ 
+  
+
+  Button: {
     padding: 14,
-    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    shadowColor: '#4ea199',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop:10
+  },
+  buttonWrapper: {
+    width: '100%',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  ButtonText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#111',
-  },
-  button: {
-    backgroundColor: '#009688',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 32,
-  },
-  buttonDisabled: {
-    backgroundColor: '#80CBC4',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
     fontWeight: 'bold',
-    fontSize: 16,
   },
+
+  
 });

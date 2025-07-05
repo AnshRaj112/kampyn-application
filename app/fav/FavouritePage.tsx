@@ -902,6 +902,11 @@ const FavouriteFoodPageContent: React.FC = () => {
           </>
         )}
       </ScrollView>
+       <Toast
+              config={{
+                error: (props) => <CustomToast {...props} />,
+              }}
+            />
     </SafeAreaView>
   );
 

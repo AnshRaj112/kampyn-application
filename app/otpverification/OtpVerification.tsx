@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+
+
+import React, { useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -9,28 +11,40 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  TouchableWithoutFeedback,
-  ActivityIndicator,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import { config } from "../../config";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function OtpVerificationScreen() {
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+const inputRefs = useRef<Array<TextInput | null>>([]);
+
   const router = useRouter();
   const { email, from } = useLocalSearchParams();
 
+  const handleChange = (text: string, index: number) => {
+    if (!/^\d?$/.test(text)) return;
+    const updatedOtp = [...otp];
+    updatedOtp[index] = text;
+    setOtp(updatedOtp);
+
+    if (text && index < 5) inputRefs.current[index + 1]?.focus();
+    else if (!text && index > 0) inputRefs.current[index - 1]?.focus();
+  };
+
   const handleSubmit = async () => {
     setError("");
+    const fullOtp = otp.join("");
 
-    if (!otp) {
-      setError("OTP is required.");
+    if (fullOtp.length < 6) {
+      setError("Please enter all 6 digits.");
       return;
     }
 
@@ -38,24 +52,19 @@ export default function OtpVerificationScreen() {
       setIsLoading(true);
       const response = await axios.post(`${config.backendUrl}/api/user/auth/otpverification`, {
         email,
-        otp,
+        otp: fullOtp,
       });
 
-      // Store the token if it exists in the response
       if (response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem("token", response.data.token);
       }
 
       if (from === "forgotpassword") {
-        router.push({
-          pathname: "/resetpassword/ResetPassword",
-          params: { email }
-        });
+        router.push({ pathname: "/resetpassword/ResetPassword", params: { email } });
       } else {
         router.replace("/profile/ProfilePage");
       }
     } catch (error: any) {
-      console.error("OTP Verification error:", error);
       setError(error.response?.data?.message || "Invalid OTP. Please try again.");
     } finally {
       setIsLoading(false);
@@ -63,117 +72,135 @@ export default function OtpVerificationScreen() {
   };
 
   return (
-    <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
+    
       <SafeAreaView style={styles.container}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoidView}
         >
-          <View style={styles.headerContainer}>
-            <Text style={styles.headerTitle}>Verify OTP</Text>
-            <Text style={styles.headerSubtitle}>
-              Enter the OTP sent to your email
-            </Text>
-          </View>
+          <View style={styles.box}>
+            <Text style={styles.title}>OTP Verification</Text>
+            <Text style={styles.subtitle}>Enter the OTP sent to {email}</Text>
 
-          <View style={styles.formContainer}>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>OTP</Text>
-              <View style={styles.inputContainer}>
+            <View style={styles.otpContainer}>
+              {otp.map((digit, index) => (
                 <TextInput
-                  style={styles.input}
-                  placeholder="Enter OTP"
-                  placeholderTextColor="#8a8a8a"
-                  value={otp}
-                  onChangeText={setOtp}
+                  key={index}
+                  ref={(ref) => {
+  inputRefs.current[index] = ref;
+}}
+
+                  style={styles.otpInput}
                   keyboardType="number-pad"
-                  maxLength={6}
+                  maxLength={1}
+                  value={digit}
+                  onChangeText={(text) => handleChange(text, index)}
+                  returnKeyType="next"
+                  placeholder=" "
+                  placeholderTextColor="#aaa"
                 />
-              </View>
+              ))}
             </View>
 
             <TouchableOpacity
-              style={styles.submitButton}
+              style={styles.button}
               onPress={handleSubmit}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="white" />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.submitButtonText}>Verify OTP</Text>
+                <Text style={styles.buttonText}>Verify OTP</Text>
               )}
             </TouchableOpacity>
 
-            <View style={styles.resendContainer}>
-              <TouchableOpacity onPress={() => router.back()}>
-                <Text style={styles.resendText}>Back</Text>
-              </TouchableOpacity>
-            </View>
+         
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </Pressable>
+   
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1a1a2e" },
-  keyboardAvoidView: { flex: 1, justifyContent: "flex-start", paddingTop: 40 },
-  headerContainer: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 65,
-    flex: 0.18,
-    paddingHorizontal: 20,
+  container: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+    padding: 20,
+    justifyContent: "center",
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "white",
+  keyboardAvoidView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems:'center'
+  },
+  box: {
+    backgroundColor: "#e5e7eb",
+     maxWidth: 400,
+    padding: 30,
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 10,
+    color: "#000",
+  },
+  subtitle: {
+    color: "#666",
+    fontSize: 14,
+    marginBottom: 20,
     textAlign: "center",
+  },
+  errorText: {
+    color: "red",
     marginBottom: 10,
   },
-  headerSubtitle: { fontSize: 16, color: "#b3b3b3", textAlign: "center" },
-  formContainer: {
-    backgroundColor: "#f5f5f5",
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 25,
-    flex: 1,
+  otpContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    gap: 10,
   },
-  inputGroup: { marginBottom: 20 },
-  inputLabel: {
+  otpInput: {
+    width: 45,
+    height: 50,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(78, 161, 153, 0.5)",
+    textAlign: "center",
+    fontSize: 18,
+    color: "#000",
+    backgroundColor: "#fff",
+  },
+  button: {
+    backgroundColor: "#4ea199",
+    paddingVertical: 14,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  backButton: {
+    marginTop: 10,
+  },
+  backText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
-    marginBottom: 8,
+    color: "#4ea199",
+    fontWeight: "600",
   },
-  inputContainer: {
-    backgroundColor: "#e8e8e8",
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    height: 55,
-  },
-  input: { flex: 1, height: "100%", fontSize: 16, color: "#333" },
-  errorText: { color: "red", marginBottom: 10 },
-  submitButton: {
-    backgroundColor: "#009688",
-    borderRadius: 12,
-    height: 55,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  submitButtonText: { color: "white", fontSize: 16, fontWeight: "bold" },
-  resendContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  resendText: { fontSize: 14, color: "#009688", fontWeight: "bold" },
 });
