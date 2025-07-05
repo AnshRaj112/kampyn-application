@@ -112,7 +112,15 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={true}
+      bounces={true}
+      alwaysBounceVertical={false}
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled={true}
+    >
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={24} color="#009688" />
         <Text style={styles.backText}>Profile</Text>
@@ -240,8 +248,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  contentContainer: {
     paddingTop: 50,
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   backButton: {
     flexDirection: 'row',
