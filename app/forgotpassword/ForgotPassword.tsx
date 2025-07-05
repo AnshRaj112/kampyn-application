@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  SafeAreaView, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { config } from '../config';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ForgotPasswordScreen() {
   const [identifier, setIdentifier] = useState('');
@@ -54,158 +55,136 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="light" />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoidView}
-        >
-          <View style={styles.headerContainer}>
-            <Image
-              source={{
-                uri: "https://res.cloudinary.com/dt45pu5mx/image/upload/v1743530399/top_left_icon_jbwtev.png",
-              }}
-              style={styles.topleftimage}
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidView}
+      >
+        <View style={styles.box}>
+          <Text style={styles.title}>Forgot Password</Text>
+          <Text style={styles.desc}>Enter your email or phone number to receive a password reset email.</Text>
+
+
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email or Phone"
+              placeholderTextColor="#8a8a8a"
+              value={identifier}
+              onChangeText={setIdentifier}
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
-            <Text style={styles.headerTitle}>Forgot Password</Text>
-            <Text style={styles.headerSubtitle}>Enter your email or phone number to receive OTP</Text>
+
+
           </View>
-
-          <View style={styles.formContainer}>
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-            {success ? <Text style={styles.successText}>{success}</Text> : null}
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>EMAIL or PHONE</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email or Phone"
-                  placeholderTextColor="#8a8a8a"
-                  value={identifier}
-                  onChangeText={setIdentifier}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSubmit}
-              disabled={isLoading}
+          <Pressable
+            onPress={handleSubmit}
+            disabled={isLoading}
+            style={styles.buttonWrapper}
+          >
+            <LinearGradient
+              colors={['#4ea199', '#6fc3bd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.Button}
             >
               {isLoading ? (
-                <ActivityIndicator color="white" />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.submitButtonText}>Send OTP</Text>
+                <Text style={styles.ButtonText}>Send OTP</Text>
               )}
-            </TouchableOpacity>
+            </LinearGradient>
+          </Pressable>
 
-            <View style={styles.backToLoginContainer}>
-              <TouchableOpacity onPress={() => router.replace("/login/LoginForm")}>
-                <Text style={styles.backToLoginText}>Back to Login</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: "#f8fafc",
+    justifyContent: "center",
+    alignItems: "center",
   },
   keyboardAvoidView: {
     flex: 1,
-    justifyContent: 'flex-start',
-    paddingTop: 40,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  headerContainer: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginBottom: 65,
-    flex: 0.18,
-    paddingHorizontal: 20,
+  box: {
+    backgroundColor: "#e5e7eb",
+    padding: 30,
+    borderRadius: 15,
+    width: "90%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  headerTitle: {
+  title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 10,
+    fontWeight: "500",
+    marginBottom: 20,
+
+    backgroundClip: "text",
+
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#b3b3b3',
-    textAlign: 'center',
-  },
-  formContainer: {
-    backgroundColor: '#f5f5f5',
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 25,
-    flex: 1,
+  desc: {
+    color: '#666666', 
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'center', 
+   
+
+
   },
   inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
-  },
-  inputContainer: {
-    backgroundColor: '#e8e8e8',
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    height: 55,
+    width: "100%",
+    gap: 10,
+
   },
   input: {
-    flex: 1,
-    height: '100%',
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    borderColor: "rgba(78,161,153,0.5)",
+    borderWidth: 1,
+    color: "#111",
     fontSize: 16,
-    color: '#333',
+    marginVertical: 6,
+    marginBottom: 20
   },
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
-  },
-  successText: {
-    color: 'green',
-    marginBottom: 10,
-  },
-  submitButton: {
-    backgroundColor: '#009688',
-    borderRadius: 12,
-    height: 55,
-    justifyContent: 'center',
+
+  Button: {
+    padding: 14,
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    borderRadius: 8,
+    shadowColor: '#4ea199',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+
   },
-  submitButtonText: {
-    color: 'white',
+  buttonWrapper: {
+    width: '100%',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  ButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  backToLoginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  backToLoginText: {
-    fontSize: 14,
-    color: '#009688',
-    fontWeight: 'bold',
-  },
-  topleftimage: {
-    position: 'absolute',
-  },
+
+
 });

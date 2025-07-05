@@ -9,7 +9,10 @@ import {
   Modal,
   FlatList,
   Pressable,
+  SafeAreaView, ActivityIndicator
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+
 import { useLocalSearchParams, router } from 'expo-router';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Toast from 'react-native-toast-message';
@@ -27,7 +30,7 @@ export default function GenderForm() {
   const [showCollegeOptions, setShowCollegeOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingColleges, setIsLoadingColleges] = useState(true);
-  const [colleges, setColleges] = useState<Array<{_id: string, fullName: string}>>([]);
+  const [colleges, setColleges] = useState<Array<{ _id: string, fullName: string }>>([]);
   const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
   const handleSelectGender = (value: string) => {
@@ -100,14 +103,14 @@ export default function GenderForm() {
       if (response.ok) {
         // Clear the temporary password from memory
         delete (global as any).tempPassword;
-        
+
         Toast.show({
           type: 'success',
           text1: 'Signup Successful!',
           text2: 'Please verify your email with the OTP sent.',
           position: 'bottom',
         });
-        
+
         // Store token if provided
         if (data.token) {
           // You might want to use a secure storage solution here
@@ -143,16 +146,16 @@ export default function GenderForm() {
     }
   };
 
-  return (
-    <>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <Text style={styles.title}>Profile Details</Text>
 
-        <View style={styles.cardWrapper}>
-          <Text style={styles.label}>GENDER</Text>
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidView}
+      >
+        <View style={styles.box}>
+          <Text style={styles.loginTitle}>Sign Up</Text>
+
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setShowGenderOptions(true)}
@@ -168,7 +171,12 @@ export default function GenderForm() {
             />
           </TouchableOpacity>
 
-          <Modal transparent visible={showGenderOptions} animationType="fade" onRequestClose={() => setShowGenderOptions(false)}>
+          <Modal
+            transparent
+            visible={showGenderOptions}
+            animationType="fade"
+            onRequestClose={() => setShowGenderOptions(false)}
+          >
             <Pressable onPress={() => setShowGenderOptions(false)} style={{ flex: 1 }}>
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
@@ -190,7 +198,6 @@ export default function GenderForm() {
             </Pressable>
           </Modal>
 
-          <Text style={[styles.label, { marginTop: 20 }]}>COLLEGE</Text>
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => !isLoadingColleges && setShowCollegeOptions(true)}
@@ -236,25 +243,51 @@ export default function GenderForm() {
             </Pressable>
           </Modal>
 
+
+
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.button, styles.halfButton]}
-              onPress={() => router.back()}
+              onPress={() => router.push('/signup/SignupForm')}
+              disabled={isLoading}
+              style={styles.buttonWrapper}
             >
-              <Text style={styles.buttonText}>Back</Text>
+              <LinearGradient
+                colors={['#4ea199', '#6fc3bd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Back</Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.halfButton]}
               onPress={handleSubmit}
               disabled={isLoading}
+              style={styles.buttonWrapper}
             >
-              <Text style={styles.buttonText}>
-                {isLoading ? 'Submitting...' : 'Submit'}
-              </Text>
+              <LinearGradient
+                colors={['#4ea199', '#6fc3bd']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Next</Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
+
+
         </View>
+
       </KeyboardAvoidingView>
       <Toast
         config={{
@@ -262,37 +295,42 @@ export default function GenderForm() {
           success: (props) => <CustomToast {...props} />,
         }}
       />
-    </>
+
+    </SafeAreaView>
   );
 }
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
-    alignItems: 'center',
-    paddingTop: 90,
+    backgroundColor: "#f8fafc",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  title: {
-    color: 'white',
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  cardWrapper: {
+  keyboardAvoidView: {
     flex: 1,
-    width: '100%',
-    backgroundColor: '#F6F6F6',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 22,
-    marginTop: 40,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 14,
-    marginBottom: 6,
-    color: '#333',
+  box: {
+    backgroundColor: "#e5e7eb",
+    padding: 30,
+    borderRadius: 15,
+    width: "90%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  loginTitle: {
+    fontSize: 28,
+    fontWeight: "500",
+    marginBottom: 20,
   },
   dropdown: {
     backgroundColor: '#EDEDED',
@@ -305,29 +343,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
+    width: '100%',
   },
-  dropdownButton: {
-    backgroundColor: '#EDEDED',
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    marginHorizontal: 30,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#000',
-    height: 50,
-    paddingHorizontal: 12,
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    width: '100%',
-  },
-  dropdownButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  optionItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    width: '100%',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
   optionsList: {
     backgroundColor: '#fff',
@@ -335,6 +363,13 @@ const styles = StyleSheet.create({
     maxHeight: 300,
     width: '90%',
     alignSelf: 'center',
+  },
+  option: {
+    paddingVertical: 12,
+  },
+  optionText: {
+    fontSize: 16,
+    color: '#000',
   },
   noOptionsContainer: {
     padding: 20,
@@ -350,9 +385,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 30,
     gap: 12,
+    width: '100%',
   },
-  halfButton: {
-    width: '40%',
+  buttonWrapper: {
+    width: '48%',
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   button: {
     backgroundColor: '#009688',
@@ -365,29 +403,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    marginHorizontal: 30,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  option: {
-    paddingVertical: 12,
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#000',
-  },
 });
-
-
-
-
-
-

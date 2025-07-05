@@ -12,10 +12,13 @@ import {
   Pressable,
   ActivityIndicator,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
+
 import { useRouter, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import { config } from "../../config";
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from "@expo/vector-icons";
+
 
 export default function ResetPasswordScreen() {
   const [password, setPassword] = useState("");
@@ -24,6 +27,9 @@ export default function ResetPasswordScreen() {
   const [error, setError] = useState("");
   const router = useRouter();
   const { email } = useLocalSearchParams();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
   const handleSubmit = async () => {
     setError("");
@@ -54,131 +60,164 @@ export default function ResetPasswordScreen() {
     }
   };
 
+
+
   return (
-    <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="light" />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardAvoidView}
-        >
-          <View style={styles.headerContainer}>
-            <Text style={styles.headerTitle}>Reset Password</Text>
-            <Text style={styles.headerSubtitle}>
-              Enter your new password
-            </Text>
-          </View>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidView}
+      >
+        <View style={styles.box}>
+          <Text style={styles.Title}>Reset Password</Text>
 
-          <View style={styles.formContainer}>
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>NEW PASSWORD</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter new password"
-                  placeholderTextColor="#8a8a8a"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
+          <View style={styles.inputGroup}>
+            <View style={styles.passwordField}>
+              <TextInput
+                style={styles.input}
+                placeholder=" New Password"
+                placeholderTextColor="#8a8a8a"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  size={22}
+                  color="#4ea199"
                 />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>CONFIRM PASSWORD</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Confirm new password"
-                  placeholderTextColor="#8a8a8a"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSubmit}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.submitButtonText}>Reset Password</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.backToLoginContainer}>
-              <TouchableOpacity onPress={() => router.back()}>
-                <Text style={styles.backToLoginText}>Back</Text>
               </TouchableOpacity>
             </View>
+
+            <View style={styles.passwordField}>
+              <TextInput
+                style={styles.input}
+                placeholder=" Confirm Password"
+                placeholderTextColor="#8a8a8a"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                  size={22}
+                  color="#4ea199"
+                />
+              </TouchableOpacity>
+            </View>
+
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Pressable>
+          <Pressable
+            onPress={handleSubmit}
+            disabled={isLoading}
+            style={styles.buttonWrapper}
+          >
+            <LinearGradient
+              colors={['#4ea199', '#6fc3bd']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.Button}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.ButtonText}>Reset Password</Text>
+              )}
+            </LinearGradient>
+          </Pressable>
+
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1a1a2e" },
-  keyboardAvoidView: { flex: 1, justifyContent: "flex-start", paddingTop: 40 },
-  headerContainer: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 65,
-    flex: 0.18,
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  headerSubtitle: { fontSize: 16, color: "#b3b3b3", textAlign: "center" },
-  formContainer: {
-    backgroundColor: "#f5f5f5",
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 25,
+  container: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  inputGroup: { marginBottom: 20 },
-  inputLabel: {
-    fontSize: 14,
+  keyboardAvoidView: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  box: {
+    backgroundColor: "#e5e7eb",
+    padding: 30,
+    borderRadius: 15,
+    width: "90%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  Title: {
+    fontSize: 28,
     fontWeight: "500",
-    color: "#333",
-    marginBottom: 8,
-  },
-  inputContainer: {
-    backgroundColor: "#e8e8e8",
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    height: 55,
-  },
-  input: { flex: 1, height: "100%", fontSize: 16, color: "#333" },
-  errorText: { color: "red", marginBottom: 10 },
-  submitButton: {
-    backgroundColor: "#009688",
-    borderRadius: 12,
-    height: 55,
-    justifyContent: "center",
-    alignItems: "center",
     marginBottom: 20,
+    backgroundClip: "text",
+
   },
-  submitButtonText: { color: "white", fontSize: 16, fontWeight: "bold" },
-  backToLoginContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 20,
+  inputGroup: {
+    width: "100%",
+    gap: 10,
   },
-  backToLoginText: { fontSize: 14, color: "#009688", fontWeight: "bold" },
-}); 
+  input: {
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    borderColor: "rgba(78,161,153,0.5)",
+    borderWidth: 1,
+    color: "#111",
+    fontSize: 16,
+    marginVertical: 6,
+  },
+  passwordField: {
+    position: "relative",
+    width: "100%",
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 12,
+    top: 18,
+  },
+  Button: {
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    shadowColor: '#4ea199',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: 10
+  },
+  buttonWrapper: {
+    width: '100%',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  ButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+
+});
