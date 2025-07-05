@@ -36,6 +36,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentHtml, setPaymentHtml] = useState("");
+  const [currentPaymentUrl, setCurrentPaymentUrl] = useState("");
 
   // Handle WebView messages from Razorpay
   const handleWebViewMessage = async (event: any) => {
@@ -106,6 +107,64 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           Alert.alert("Payment Error", errorMessage);
         } finally {
           setIsProcessingPayment(false);
+        }
+      } else if (data.type === 'payment_success_from_url') {
+        console.log("✅ Payment success detected from URL navigation:", data.url);
+        setShowPaymentModal(false);
+        Alert.alert("Success", "Payment successful! Redirecting to order confirmation.");
+        
+        // For test mode, we can extract payment details from the URL if needed
+        try {
+          const url = new URL(data.url);
+          const params = new URLSearchParams(url.search);
+          
+          const paymentId = params.get('razorpay_payment_id');
+          const orderId = params.get('razorpay_order_id');
+          const signature = params.get('razorpay_signature');
+          
+          if (paymentId && orderId && signature) {
+            console.log("🔍 Extracted payment details from success URL:", {
+              paymentId,
+              orderId,
+              signature: signature.substring(0, 20) + "..."
+            });
+            
+            // Process the payment verification
+            setIsProcessingPayment(true);
+            
+            try {
+              const verifyPayload = {
+                razorpay_order_id: orderId,
+                razorpay_payment_id: paymentId,
+                razorpay_signature: signature,
+              };
+              
+              const verifyResponse = await axios.post(
+                `${config.backendUrl}/payment/verify`,
+                verifyPayload,
+                { withCredentials: true }
+              );
+              
+              console.log("✅ Payment verified successfully from URL:", verifyResponse.data);
+              
+              // Use the actual orderId from the verification response
+              const actualOrderId = verifyResponse.data.orderId;
+              console.log("🎉 Payment successful from URL, redirecting with orderId:", actualOrderId);
+              onOrder(actualOrderId);
+            } catch (error: any) {
+              console.error("❌ Payment verification failed from URL:", error);
+              Alert.alert("Payment Error", "Payment verification failed. Please contact support.");
+            } finally {
+              setIsProcessingPayment(false);
+            }
+          } else {
+            console.log("⚠️ No payment details found in success URL, proceeding with basic success");
+            // For test mode, we might not have all details, so just show success
+            Alert.alert("Success", "Payment completed successfully!");
+          }
+        } catch (error) {
+          console.error("❌ Error parsing success URL:", error);
+          Alert.alert("Success", "Payment completed successfully!");
         }
       } else if (data.type === 'payment_cancelled') {
         console.log("❌ Payment cancelled by user");
@@ -954,15 +1013,37 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Complete Payment</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => {
-                setShowPaymentModal(false);
-                Alert.alert("Cancelled", "Payment was cancelled. You can try ordering again.");
-              }}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
+            <View style={styles.modalHeaderButtons}>
+              {/* Debug button to show current URL */}
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={() => {
+                  if (currentPaymentUrl) {
+                    Alert.alert(
+                      "Current Payment URL", 
+                      currentPaymentUrl,
+                      [
+                        { text: "Copy", onPress: () => console.log("URL copied:", currentPaymentUrl) },
+                        { text: "OK" }
+                      ]
+                    );
+                  } else {
+                    Alert.alert("Debug Info", "No URL captured yet");
+                  }
+                }}
+              >
+                <Text style={styles.debugButtonText}>🔍</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  setShowPaymentModal(false);
+                  Alert.alert("Cancelled", "Payment was cancelled. You can try ordering again.");
+                }}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           
           <WebView
@@ -1011,9 +1092,90 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
             onLoadStart={() => {
               console.log("🔄 WebView loading started");
             }}
-            // Additional debugging
+            // Handle navigation changes and capture verification URLs
             onNavigationStateChange={(navState) => {
               console.log("🌐 WebView navigation:", navState.url);
+              
+              // Store current URL for debugging
+              if (navState.url) {
+                setCurrentPaymentUrl(navState.url);
+                console.log("🔗 Current payment URL:", navState.url);
+              }
+              
+              // Check if this is a Razorpay verification URL or any payment-related URL
+              if (navState.url && (
+                navState.url.includes('razorpay.com') || 
+                navState.url.includes('payment') ||
+                navState.url.includes('verify') ||
+                navState.url.includes('success') ||
+                navState.url.includes('failure') ||
+                navState.url.includes('callback') ||
+                navState.url.includes('return') ||
+                navState.url.includes('redirect')
+              )) {
+                                  console.log("🔍 Detected Razorpay navigation:", navState.url);
+                  
+                  // For test mode, show the URL for debugging
+                  if (navState.url.includes('success') || navState.url.includes('verify') || navState.url.includes('callback')) {
+                    console.log("🎯 IMPORTANT: Payment verification URL captured:", navState.url);
+                    // You can uncomment the next line to automatically show the URL
+                    // Alert.alert("Payment URL Captured", navState.url);
+                  }
+                  
+                  // Extract payment details from URL if available
+                  try {
+                  const url = new URL(navState.url);
+                  const params = new URLSearchParams(url.search);
+                  
+                  const paymentId = params.get('razorpay_payment_id');
+                  const orderId = params.get('razorpay_order_id');
+                  const signature = params.get('razorpay_signature');
+                  
+                  if (paymentId && orderId && signature) {
+                    console.log("✅ Found payment details in URL:", {
+                      paymentId,
+                      orderId,
+                      signature: signature.substring(0, 20) + "..."
+                    });
+                    
+                    // Send payment success message
+                    handleWebViewMessage({
+                      nativeEvent: {
+                        data: JSON.stringify({
+                          type: 'payment_success',
+                          razorpay_order_id: orderId,
+                          razorpay_payment_id: paymentId,
+                          razorpay_signature: signature
+                        })
+                      }
+                    });
+                  } else if (navState.url.includes('success')) {
+                    console.log("✅ Payment success page detected");
+                    // Handle success page
+                    handleWebViewMessage({
+                      nativeEvent: {
+                        data: JSON.stringify({
+                          type: 'payment_success_from_url',
+                          url: navState.url
+                        })
+                      }
+                    });
+                  } else if (navState.url.includes('failure') || navState.url.includes('cancel')) {
+                    console.log("❌ Payment failure/cancel page detected");
+                    // Handle failure page
+                    handleWebViewMessage({
+                      nativeEvent: {
+                        data: JSON.stringify({
+                          type: 'payment_cancelled',
+                          url: navState.url
+                        })
+                      }
+                    });
+                  }
+                } catch (error) {
+                  console.error("❌ Error parsing navigation URL:", error);
+                }
+              }
             }}
             // Handle load progress
             onLoadProgress={(syntheticEvent) => {
@@ -1159,6 +1321,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
     backgroundColor: "#01796f",
+  },
+  modalHeaderButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  debugButton: {
+    padding: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 4,
+  },
+  debugButtonText: {
+    fontSize: 16,
+    color: "#fff",
   },
   modalTitle: {
     fontSize: 18,
