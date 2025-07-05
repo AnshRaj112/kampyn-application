@@ -63,9 +63,9 @@ export default function AboutUs() {
 
         <View style={styles.footerBox}>
           <Text style={styles.footer}>
-              Thank you for choosing BitesBay — where convenience meets campus cuisine.
-        <br/>
-          We&apos;re here to serve, support, and simplify your food experience.
+              Thank you for choosing BitesBay — where convenience meets campus cuisine.{"\n"}
+        
+           We're here to serve, support, and simplify your food experience.
         
           </Text>
         </View>

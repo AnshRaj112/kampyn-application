@@ -6,18 +6,22 @@ import {
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
-  Keyboard,
+
   Platform,
   Pressable,
+  SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { CustomToast } from '../CustomToast';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SignupStep1() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleNext = () => {
     if (!name || !email || !phone) {
@@ -54,9 +58,9 @@ export default function SignupStep1() {
 
     router.push({
       pathname: '/signup/password_signup',
-      params: { 
-        name, 
-        email, 
+      params: {
+        name,
+        email,
         phone,
         type: 'user-standard' // Default user type
       },
@@ -64,30 +68,25 @@ export default function SignupStep1() {
   };
 
   return (
-    <View style={styles.outerContainer}>
-      <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <Text style={styles.title}>Sign Up</Text>
-        <Text style={styles.subtitle}>Please sign up to get started</Text>
 
-        <View style={styles.cardWrapper}>
-          <View style={styles.card}>
-            <Text style={styles.label}>NAME</Text>
-            <TextInput
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidView}
+      >
+        <View style={styles.box}>
+          <Text style={styles.Title}>Sign Up</Text>
+           <View style={styles.inputGroup}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#8a8a8a"
+            value={name}
+            onChangeText={setName}
+          />
+  <TextInput
               style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#8a8a8a"
-              value={name}
-              onChangeText={setName}
-            />
-
-            <Text style={styles.label}>EMAIL</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="example@gmail.com"
+              placeholder="Email"
               placeholderTextColor="#8a8a8a"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -95,125 +94,145 @@ export default function SignupStep1() {
               onChangeText={setEmail}
             />
 
-            <Text style={styles.label}>PHONE</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="9988776655"
-              placeholderTextColor="#8a8a8a"
-              keyboardType="numeric"
-              maxLength={10}
-              value={phone}
-             // onChangeText={setPhone}
-             onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, ''))}
-             ////
-            />
+  <TextInput
+            style={styles.input}
+            placeholder="Phone Number"
+            placeholderTextColor="#8a8a8a"
+            keyboardType="numeric"
+            maxLength={10}
+            value={phone}
+            // onChangeText={setPhone}
+            onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, ''))}
+          ////
+          />
 
-            <TouchableOpacity style={styles.button} onPress={handleNext}>
-              <Text style={styles.buttonText}>Next</Text>
-            </TouchableOpacity>
-
-             <View style={styles.signupContainer}>
-              <Text style={styles.noAccountText}>Don't have an account? </Text>
-              <TouchableOpacity
-                onPress={() => router.push("/login/LoginForm")}
-              >
-                <Text style={styles.login}>LOGIN</Text>
-              </TouchableOpacity>
-            </View>
           </View>
+
+        <Pressable
+          onPress={handleNext}
+          disabled={isLoading}
+          style={styles.buttonWrapper}
+        >
+          <LinearGradient
+            colors={['#4ea199', '#6fc3bd']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.Button}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.ButtonText}>Next</Text>
+            )}
+          </LinearGradient>
+        </Pressable>
+        <View style={styles.registerContainer}>
+          <Text style={styles.registerText}>
+           Already have an account?{" "}
+            <Text
+              style={styles.signupLink}
+              onPress={() => router.push("/login/LoginForm")}
+            >
+              Login
+            </Text>
+          </Text>
         </View>
-        </KeyboardAvoidingView>
-      </Pressable>
-      
-      <Toast
+      </View>
+    </KeyboardAvoidingView>
+     <Toast
         config={{
           error: (props) => <CustomToast {...props} />,
         }}
       />
-    </View>
-  );
+
+    </SafeAreaView >
+    
+ );
 }
+
 const styles = StyleSheet.create({
-    outerContainer: {
-      flex: 1,
-      backgroundColor: '#1a1a2e',
-    },
-    container: {
-      flex: 1,
-      alignItems: 'center',
-      paddingTop: 90,
-    },
-    title: {
-      color: '#FFFFFF',
-      fontSize: 28,
-      fontWeight: '700',
-      marginBottom: 6,
-    },
-    subtitle: {
-      color: '#B0B0B0',
-      fontSize: 16,
-      //marginBottom: 28,
-    },
-    cardWrapper: {
-      flex: 1,
-      width: '100%',
-      backgroundColor: '#F6F6F6',
-      borderRadius: 24,
-      padding: 22,
-      justifyContent: 'flex-start',
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      borderBottomLeftRadius: 0,
-      borderBottomEndRadius: 0,
-      marginTop: 40,
-    },
-    card: {
-      flex: 1,
-    },
-    label: {
-      fontSize: 13,
-      fontWeight: '600',
-      marginTop: 14,
-      marginBottom: 6,
-      color: '#333333',
-    },
-    input: {
-      backgroundColor: '#EDEDED',
-      padding: 14,
-      borderRadius: 10,
-      fontSize: 16,
-      color: '#111',
-    },
-    button: {
-      backgroundColor: '#009688',
-      padding: 16,
-      borderRadius: 12,
-      marginTop: 32,
-    },
-    buttonText: {
-      color: '#FFFFFF',
-      textAlign: 'center',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    footer: {
-      marginTop: 16,
-      color: '#333',
-      fontSize: 14,
-      textAlign: 'center',
-    },
-    login: {
-      fontSize: 14,
-      color: '#00C2B2',
-      fontWeight: 'bold',
-    },
-    noAccountText: {
-      color: '#666666',
-      fontSize: 14,
-    },
-    signupContainer: {
-    flexDirection: "row",
+  container: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
     justifyContent: "center",
-    marginTop: 16,
+    alignItems: "center",
   },
-  });
+  keyboardAvoidView: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  box: {
+    backgroundColor: "#e5e7eb",
+    padding: 30,
+    borderRadius: 15,
+    width: "90%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  Title: {
+    fontSize: 28,
+    fontWeight: "500",
+    marginBottom: 20,
+
+    backgroundClip: "text",
+
+  },
+  inputGroup: {
+    width: "100%",
+    gap: 10,
+  },
+  input: {
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    borderColor: "rgba(78,161,153,0.5)",
+    borderWidth: 1,
+    color: "#111",
+    fontSize: 16,
+    marginVertical: 6,
+  
+  },
+
+  Button: {
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    shadowColor: '#4ea199',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop:20
+  },
+  buttonWrapper: {
+    width: '100%',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  ButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    
+  },
+
+  registerContainer: {
+    marginTop: 20,
+  },
+  registerText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  signupLink: {
+    fontWeight: "bold",
+    color: "#4ea199",
+  },
+});

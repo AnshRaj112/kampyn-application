@@ -916,6 +916,11 @@ const FavouriteFoodPageContent: React.FC = () => {
           <ActivityIndicator size="large" color="#4ea199" style={{ marginTop: 32 }} />
         )}
       </ScrollView>
+       <Toast
+              config={{
+                error: (props) => <CustomToast {...props} />,
+              }}
+            />
     </SafeAreaView>
   );
 
