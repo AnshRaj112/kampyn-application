@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { Minus, Plus, Trash } from "lucide-react-native";
 import { CartItem } from "../../types/types";
 
@@ -8,9 +8,10 @@ interface Props {
   onIncrease: (id: string) => void;
   onDecrease: (id: string) => void;
   onRemove: (id: string) => void;
+  isLoading?: boolean;
 }
 
-const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove }) => (
+const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove, isLoading = false }) => (
   <View style={styles.card}>
     <View style={styles.left}>
       {item.image ? (
@@ -27,20 +28,40 @@ const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove 
     <View style={styles.controls}>
       <TouchableOpacity
         onPress={() => onDecrease(item._id)}
-        disabled={item.quantity === 1}
+        disabled={item.quantity === 1 || isLoading}
         style={[styles.controlButton, item.quantity === 1 && styles.disabledButton]}
       >
-        <Minus size={16} color={item.quantity === 1 ? "#999" : "#01796f"} />
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#01796f" />
+        ) : (
+          <Minus size={16} color={item.quantity === 1 ? "#999" : "#01796f"} />
+        )}
       </TouchableOpacity>
 
       <Text style={styles.quantity}>{item.quantity}</Text>
 
-      <TouchableOpacity onPress={() => onIncrease(item._id)} style={styles.controlButton}>
-        <Plus size={16} color="#01796f" />
+      <TouchableOpacity 
+        onPress={() => onIncrease(item._id)} 
+        style={styles.controlButton}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#01796f" />
+        ) : (
+          <Plus size={16} color="#01796f" />
+        )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => onRemove(item._id)} style={styles.controlButton}>
-        <Trash size={16} color="#01796f" />
+      <TouchableOpacity 
+        onPress={() => onRemove(item._id)} 
+        style={styles.controlButton}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#01796f" />
+        ) : (
+          <Trash size={16} color="#01796f" />
+        )}
       </TouchableOpacity>
     </View>
   </View>

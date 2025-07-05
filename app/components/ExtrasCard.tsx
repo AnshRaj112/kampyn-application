@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, ActivityIndicator } from "react-native";
 import { FoodItem } from "../../types/types";
 import { Minus, Plus } from "lucide-react-native";
 
@@ -9,9 +9,10 @@ interface Props {
   onIncrease: (id: string) => void;
   onDecrease: (id: string) => void;
   quantity: number;
+  isLoading?: boolean;
 }
 
-const ExtrasCard: React.FC<Props> = ({ item, onAdd, onIncrease, onDecrease, quantity }) => (
+const ExtrasCard: React.FC<Props> = ({ item, onAdd, onIncrease, onDecrease, quantity, isLoading = false }) => (
   <View style={styles.card}>
     <Image
       source={{ uri: item.image || "https://via.placeholder.com/150" }}
@@ -24,16 +25,26 @@ const ExtrasCard: React.FC<Props> = ({ item, onAdd, onIncrease, onDecrease, quan
       <TouchableOpacity
         style={styles.addToCartButton}
         onPress={() => onAdd(item)}
+        disabled={isLoading}
       >
-        <Text style={styles.buttonText}>Add to Cart</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Add to Cart</Text>
+        )}
       </TouchableOpacity>
     ) : (
       <View style={styles.quantityControls}>
         <TouchableOpacity
           style={styles.quantityButton}
           onPress={() => onDecrease(item._id)}
+          disabled={isLoading}
         >
-          <Minus size={16} color="#333" />
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#333" />
+          ) : (
+            <Minus size={16} color="#333" />
+          )}
         </TouchableOpacity>
 
         <Text style={styles.quantity}>{quantity}</Text>
@@ -41,8 +52,13 @@ const ExtrasCard: React.FC<Props> = ({ item, onAdd, onIncrease, onDecrease, quan
         <TouchableOpacity
           style={styles.quantityButton}
           onPress={() => onIncrease(item._id)}
+          disabled={isLoading}
         >
-          <Plus size={16} color="#333" />
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#333" />
+          ) : (
+            <Plus size={16} color="#333" />
+          )}
         </TouchableOpacity>
       </View>
     )}

@@ -138,6 +138,8 @@ const FavouriteFoodPageContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
+  const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set());
 
 
   const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:5001";
@@ -410,6 +412,9 @@ const FavouriteFoodPageContent: React.FC = () => {
       return;
     }
 
+    // Add loading state
+    setAddingToCart(prev => new Set(prev).add(foodItem._id));
+
     try {
       if (currentVendorId && currentVendorId !== foodItem.vendorId) {
         Toast.show({
@@ -520,11 +525,21 @@ const FavouriteFoodPageContent: React.FC = () => {
           text2: "Failed to add item to cart",
         });
       }
+    } finally {
+      // Remove loading state
+      setAddingToCart(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(foodItem._id);
+        return newSet;
+      });
     }
   };
 
   const handleIncreaseQuantity = async (foodItem: FoodItem) => {
     if (!user?._id) return;
+
+    // Add loading state
+    setLoadingItems(prev => new Set(prev).add(foodItem._id));
 
     try {
       const isVendorAvailable = await checkVendorAvailability(
@@ -603,11 +618,22 @@ const FavouriteFoodPageContent: React.FC = () => {
           text2: "Failed to increase quantity"
         });
       }
+    } finally {
+      // Remove loading state
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(foodItem._id);
+        return newSet;
+      });
     }
   };
 
   const handleDecreaseQuantity = async (foodItem: FoodItem) => {
     if (!user?._id) return;
+    
+    // Add loading state
+    setLoadingItems(prev => new Set(prev).add(foodItem._id));
+    
     const configAuth = await getAuthConfig();
 
     try {
@@ -658,6 +684,13 @@ const FavouriteFoodPageContent: React.FC = () => {
           text1: "Failed to decrease quantity",
         });
       }
+    } finally {
+      // Remove loading state
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(foodItem._id);
+        return newSet;
+      });
     }
   };
 
@@ -877,15 +910,25 @@ const FavouriteFoodPageContent: React.FC = () => {
                           <TouchableOpacity
                             style={styles.quantityButton}
                             onPress={() => handleDecreaseQuantity(food)}
+                            disabled={loadingItems.has(food._id)}
                           >
-                            <Minus size={16} />
+                            {loadingItems.has(food._id) ? (
+                              <ActivityIndicator size="small" color="#333" />
+                            ) : (
+                              <Minus size={16} />
+                            )}
                           </TouchableOpacity>
                           <Text style={styles.quantity}>{quantity}</Text>
                           <TouchableOpacity
                             style={styles.quantityButton}
                             onPress={() => handleIncreaseQuantity(food)}
+                            disabled={loadingItems.has(food._id)}
                           >
-                            <Plus size={16} />
+                            {loadingItems.has(food._id) ? (
+                              <ActivityIndicator size="small" color="#333" />
+                            ) : (
+                              <Plus size={16} />
+                            )}
                           </TouchableOpacity>
                         </View>
                       ) : (
@@ -895,14 +938,18 @@ const FavouriteFoodPageContent: React.FC = () => {
                             !isSameVendor && styles.disabledButton
                           ]}
                           onPress={() => handleAddToCart(food)}
-                          disabled={!isSameVendor}
+                          disabled={!isSameVendor || addingToCart.has(food._id)}
                         >
-                          <Text style={[
-                            styles.addToCartText,
-                            !isSameVendor && styles.disabledButtonText
-                          ]}>
-                            {!isSameVendor ? "Different Vendor" : "Add to Cart"}
-                          </Text>
+                          {addingToCart.has(food._id) ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : (
+                            <Text style={[
+                              styles.addToCartText,
+                              !isSameVendor && styles.disabledButtonText
+                            ]}>
+                              {!isSameVendor ? "Different Vendor" : "Add to Cart"}
+                            </Text>
+                          )}
                         </TouchableOpacity>
                       )}
                     </View>
