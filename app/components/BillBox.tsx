@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WebView } from "react-native-webview";
+import RazorpayCheckout from "react-native-razorpay";
 import axios from "axios";
 import { CartItem, OrderType, OrderData } from "@/types/types";
 import { config } from "../config";
@@ -29,9 +29,9 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [charges, setCharges] = useState({ packingCharge: 5, deliveryCharge: 50 });
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentHtml, setPaymentHtml] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+
 
   // Fetch university charges when component mounts
   useEffect(() => {
@@ -343,6 +343,52 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
                   theme: {
                     color: "#01796f"
                   },
+                  // Enhanced mobile configuration
+                  config: {
+                    display: {
+                      blocks: {
+                        banks: {
+                          name: "Pay using UPI",
+                          instruments: [
+                            {
+                              method: "upi"
+                            }
+                          ]
+                        },
+                        cards: {
+                          name: "Pay using Card",
+                          instruments: [
+                            {
+                              method: "card"
+                            }
+                          ]
+                        },
+                        netbanking: {
+                          name: "Pay using Netbanking",
+                          instruments: [
+                            {
+                              method: "netbanking"
+                            }
+                          ]
+                        },
+                        other: {
+                          name: "Other Payment Methods",
+                          instruments: [
+                            {
+                              method: "wallet"
+                            },
+                            {
+                              method: "paylater"
+                            }
+                          ]
+                        }
+                      },
+                      sequence: ["block.banks", "block.cards", "block.netbanking", "block.other"],
+                      preferences: {
+                        show_default_blocks: false
+                      }
+                    }
+                  },
                   handler: function(response) {
                     console.log("💳 Razorpay payment success response:", response);
                     
@@ -377,6 +423,20 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
                         type: 'payment_cancelled'
                       }));
                     }
+                  },
+                  // Enhanced error handling
+                  notes: {
+                    "address": "KIITBites Food Order",
+                    "merchant_order_id": "${updatedRazorpayOptions.order_id}"
+                  },
+                  // Better mobile experience
+                  retry: {
+                    enabled: true,
+                    max_count: 3
+                  },
+                  // Auto-fill for better UX
+                  auto_fill: {
+                    method: "card"
                   }
                 };
                 var rzp = new Razorpay(options);
@@ -387,9 +447,102 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           </html>
         `;
 
-        // Set the HTML content and show the payment modal
-        setPaymentHtml(htmlContent);
-        setShowPaymentModal(true);
+        // Use native RazorpayCheckout for Expo
+        try {
+          console.log("💳 Opening Razorpay checkout...");
+          
+          const options = {
+            description: "Complete your payment",
+            image: "https://your-logo-url.com/logo.png", // Optional: Add your logo
+            currency: "INR",
+            key: razorpayKey,
+            amount: frontendAmountInPaise,
+            name: "KIITBites",
+            order_id: newRazorpayOrder.id,
+            prefill: {
+              email: "customer@example.com", // You can get this from user profile
+              contact: phone,
+              name: name,
+            },
+            theme: { color: "#01796f" },
+            notes: {
+              "address": "KIITBites Food Order",
+              "merchant_order_id": newRazorpayOrder.id
+            },
+            modal: {
+              ondismiss: () => {
+                console.log("❌ Payment cancelled by user");
+                Alert.alert("Cancelled", "Payment was cancelled. You can try ordering again.");
+              }
+            }
+          };
+
+          const data = await RazorpayCheckout.open(options);
+          
+          console.log("✅ Payment success:", data);
+          
+          // Handle successful payment
+          if (data.razorpay_payment_id) {
+            console.log("🔍 Payment data received:", {
+              razorpay_order_id: data.razorpay_order_id,
+              razorpay_payment_id: data.razorpay_payment_id,
+              razorpay_signature: data.razorpay_signature?.substring(0, 20) + "..." // Log partial signature for security
+            });
+
+            setIsProcessingPayment(true);
+
+            try {
+              const verifyPayload = {
+                razorpay_order_id: data.razorpay_order_id,
+                razorpay_payment_id: data.razorpay_payment_id,
+                razorpay_signature: data.razorpay_signature,
+              };
+              
+              console.log("📤 Sending payment verification request:", {
+                url: `${config.backendUrl}/payment/verify`,
+                payload: {
+                  razorpay_order_id: verifyPayload.razorpay_order_id,
+                  razorpay_payment_id: verifyPayload.razorpay_payment_id,
+                  razorpay_signature: verifyPayload.razorpay_signature?.substring(0, 20) + "..." // Log partial signature for security
+                }
+              });
+
+              const verifyResponse = await axios.post(
+                `${config.backendUrl}/payment/verify`,
+                verifyPayload,
+                { withCredentials: true }
+              );
+              
+              console.log("✅ Payment verified successfully:", verifyResponse.data);
+              Alert.alert("Success", "Payment successful!");
+              
+              // Use the actual orderId from the verification response
+              const actualOrderId = verifyResponse.data.orderId;
+              console.log("🎉 Mobile: Payment successful, redirecting to payment page with orderId:", actualOrderId);
+              onOrder(actualOrderId);
+            } catch (error: any) {
+              console.error("❌ Payment verification failed:", error);
+              console.error("❌ Error response:", error.response?.data);
+              console.error("❌ Error status:", error.response?.status);
+              
+              const errorMessage = error.response?.data?.message || error.message || "Payment verification failed. Please contact support.";
+              Alert.alert("Payment Error", errorMessage);
+            } finally {
+              setIsProcessingPayment(false);
+            }
+          }
+          
+        } catch (error: any) {
+          console.error("❌ Razorpay checkout failed:", error);
+          
+          if (error.code === 'PAYMENT_CANCELLED') {
+            console.log("❌ Payment cancelled by user");
+            Alert.alert("Cancelled", "Payment was cancelled. You can try ordering again.");
+          } else {
+            console.error("❌ Payment error:", error);
+            Alert.alert("Payment Error", "Payment failed. Please try again.");
+          }
+        }
              } catch (error: any) {
          console.error("❌ Failed to create new Razorpay order:", error);
          console.error("❌ Error response:", error.response?.data);
@@ -403,94 +556,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     }
   };
 
-  // Handle WebView messages from Razorpay
-  const handleWebViewMessage = async (event: any) => {
-    try {
-      console.log("📱 Raw WebView message:", event.nativeEvent.data);
-      const data = JSON.parse(event.nativeEvent.data);
-      console.log("📱 Parsed WebView message:", data);
 
-      if (data.type === 'payment_success') {
-        console.log("✅ Payment success received, validating data...");
-        
-        // Validate payment data
-        if (!data.razorpay_order_id || !data.razorpay_payment_id || !data.razorpay_signature) {
-          console.error("❌ Missing payment data:", {
-            razorpay_order_id: data.razorpay_order_id,
-            razorpay_payment_id: data.razorpay_payment_id,
-            razorpay_signature: data.razorpay_signature
-          });
-          Alert.alert("Error", "Payment data is incomplete. Please try again.");
-          setShowPaymentModal(false);
-          return;
-        }
-
-        console.log("🔍 Payment data validation passed:", {
-          razorpay_order_id: data.razorpay_order_id,
-          razorpay_payment_id: data.razorpay_payment_id,
-          razorpay_signature: data.razorpay_signature?.substring(0, 20) + "..." // Log partial signature for security
-        });
-
-        setIsProcessingPayment(true);
-        setShowPaymentModal(false);
-
-        try {
-          const verifyPayload = {
-            razorpay_order_id: data.razorpay_order_id,
-            razorpay_payment_id: data.razorpay_payment_id,
-            razorpay_signature: data.razorpay_signature,
-          };
-          
-          console.log("📤 Sending payment verification request:", {
-            url: `${config.backendUrl}/payment/verify`,
-            payload: {
-              razorpay_order_id: verifyPayload.razorpay_order_id,
-              razorpay_payment_id: verifyPayload.razorpay_payment_id,
-              razorpay_signature: verifyPayload.razorpay_signature?.substring(0, 20) + "..." // Log partial signature for security
-            }
-          });
-
-          const verifyResponse = await axios.post(
-            `${config.backendUrl}/payment/verify`,
-            verifyPayload,
-            { withCredentials: true }
-          );
-          
-          console.log("✅ Payment verified successfully:", verifyResponse.data);
-          Alert.alert("Success", "Payment successful!");
-          
-          // Use the actual orderId from the verification response
-          const actualOrderId = verifyResponse.data.orderId;
-          console.log("🎉 Mobile: Payment successful, redirecting to payment page with orderId:", actualOrderId);
-          onOrder(actualOrderId);
-        } catch (error: any) {
-          console.error("❌ Payment verification failed:", error);
-          console.error("❌ Error response:", error.response?.data);
-          console.error("❌ Error status:", error.response?.status);
-          
-          const errorMessage = error.response?.data?.message || error.message || "Payment verification failed. Please contact support.";
-          Alert.alert("Payment Error", errorMessage);
-        } finally {
-          setIsProcessingPayment(false);
-        }
-      } else if (data.type === 'payment_cancelled') {
-        console.log("❌ Payment cancelled by user");
-        setShowPaymentModal(false);
-        Alert.alert("Cancelled", "Payment was cancelled. You can try ordering again.");
-      } else if (data.type === 'payment_error') {
-        console.error("❌ Payment error from WebView:", data.error);
-        setShowPaymentModal(false);
-        Alert.alert("Payment Error", data.error || "Payment failed. Please try again.");
-      } else {
-        console.warn("⚠️ Unknown message type from WebView:", data.type);
-      }
-    } catch (error) {
-      console.error("❌ Error parsing WebView message:", error);
-      console.error("❌ Raw message was:", event.nativeEvent.data);
-      Alert.alert("Error", "Failed to process payment response. Please try again.");
-      setShowPaymentModal(false);
-    }
-  };
 
   return (
     <>
@@ -574,52 +640,17 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
       </TouchableOpacity>
       </ScrollView>
 
-      {/* Payment Modal with WebView */}
+      {/* Payment Processing Modal */}
       <Modal
-        visible={showPaymentModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        visible={isProcessingPayment}
+        transparent={true}
+        animationType="fade"
       >
-        {isProcessingPayment && (
-          <View style={styles.loadingOverlay}>
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Processing Payment...</Text>
-              <Text style={styles.loadingSubtext}>Please wait, do not close this window</Text>
-            </View>
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Processing Payment...</Text>
+            <Text style={styles.loadingSubtext}>Please wait, do not close this window</Text>
           </View>
-        )}
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Complete Payment</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowPaymentModal(false)}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <WebView
-            source={{ html: paymentHtml }}
-            style={styles.webview}
-            onMessage={handleWebViewMessage}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            startInLoadingState={true}
-            scalesPageToFit={true}
-            onError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.error('❌ WebView error:', nativeEvent);
-              Alert.alert("Error", "Failed to load payment gateway. Please try again.");
-              setShowPaymentModal(false);
-            }}
-            onHttpError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.error('❌ WebView HTTP error:', nativeEvent);
-              Alert.alert("Error", "Payment gateway connection failed. Please try again.");
-              setShowPaymentModal(false);
-            }}
-          />
         </View>
       </Modal>
     </>
@@ -732,35 +763,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    backgroundColor: "#01796f",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  webview: {
-    flex: 1,
-  },
+
   loadingOverlay: {
     position: 'absolute',
     top: 0,
