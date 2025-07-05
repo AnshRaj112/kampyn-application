@@ -42,6 +42,7 @@ interface CartResponse {
     price: number;
     quantity: number;
     kind: string;
+    packable?: boolean;
     totalPrice: number;
   }>;
   vendorName: string;
@@ -117,6 +118,8 @@ export default function CartScreen() {
   const [userLoggedIn, setUserLoggedIn] = useState<boolean>(false);
   const [userData, setUserData] = useState<{ _id: string; foodcourtId: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
+  const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set());
     //const [filteredExtras, setFilteredExtras] = useState<FoodItem[]>([]);
 
  // const navigation = useNavigation();
@@ -204,6 +207,7 @@ export default function CartScreen() {
         vendorName: cartRes.data.vendorName,
         vendorId: cartRes.data.vendorId,
         category: (c.kind === "Retail" ? "Retail" : "Produce") as "Retail" | "Produce",
+        packable: c.packable,
       }));
 
       setCart(detailedCart);
@@ -306,6 +310,7 @@ export default function CartScreen() {
           vendorName: cartRes.data.vendorName,
           vendorId: cartRes.data.vendorId,
           category,
+          packable: c.packable,
         };
       });
 
@@ -322,6 +327,9 @@ const increaseQty = async (id: string) => {
     console.warn(`[Cart.tsx] increaseQty: item ${id} not found in state.cart`);
     return;
   }
+
+  // Add loading state
+  setLoadingItems(prev => new Set(prev).add(id));
 
   if (userLoggedIn && userData) {
     console.log(
@@ -367,6 +375,13 @@ const increaseQty = async (id: string) => {
           text2: `Failed to increase quantity`,
         });
       }
+    } finally {
+      // Remove loading state
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
     }
   } else {
     
@@ -380,6 +395,13 @@ const increaseQty = async (id: string) => {
       type: 'success',
       text1: 'Quantity Updated',
       text2: `Increased quantity of ${thisItem.name}`,
+    });
+    
+    // Remove loading state for guest
+    setLoadingItems(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
     });
   }
 };
@@ -396,6 +418,9 @@ const decreaseQty = async (id: string) => {
     console.log(`[CartScreen] decreaseQty blocked: quantity is already 1`);
     return;
   }
+
+  // Add loading state
+  setLoadingItems(prev => new Set(prev).add(id));
 
   if (userLoggedIn && userData) {
     console.log(
@@ -425,6 +450,13 @@ const decreaseQty = async (id: string) => {
         text1: 'Error',
         text2: err.response?.data?.message || 'Failed to decrease quantity',
       });
+    } finally {
+      // Remove loading state
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
     }
   } else {
 
@@ -439,6 +471,13 @@ const decreaseQty = async (id: string) => {
       type: 'info',
       text1: 'Quantity Updated',
       text2: `Decreased quantity of ${thisItem.name}`,
+    });
+    
+    // Remove loading state for guest
+    setLoadingItems(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
     });
   }
 };
@@ -500,6 +539,9 @@ const removeItem = async (id: string) => {
 
 
 const addToCart = async (item: FoodItem) => {
+  // Add loading state
+  setAddingToCart(prev => new Set(prev).add(item._id));
+
   if (userLoggedIn && userData) {
     const vendorId = cart[0]?.vendorId;
     if (!vendorId) {
@@ -507,6 +549,12 @@ const addToCart = async (item: FoodItem) => {
         type: "error",
         text1: "Vendor Error",
         text2: "Cannot add items without a vendor selected",
+      });
+      // Remove loading state
+      setAddingToCart(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(item._id);
+        return newSet;
       });
       return;
     }
@@ -561,6 +609,13 @@ const addToCart = async (item: FoodItem) => {
           text2: "Failed to add item to cart",
         });
       }
+    } finally {
+      // Remove loading state
+      setAddingToCart(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(item._id);
+        return newSet;
+      });
     }
   } else {
     const existingItem = cart.find((i) => i._id === item._id);
@@ -604,6 +659,13 @@ const addToCart = async (item: FoodItem) => {
       type: "success",
       text1: "Added to Cart",
       text2: `${item.name} added to cart!`,
+    });
+    
+    // Remove loading state for guest
+    setAddingToCart(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(item._id);
+      return newSet;
     });
   }
 };
@@ -685,6 +747,7 @@ const addToCart = async (item: FoodItem) => {
                       onIncrease={() => increaseQty(item._id)}
                       onDecrease={() => decreaseQty(item._id)}
                       onRemove={() => removeItem(item._id)}
+                      isLoading={loadingItems.has(item._id)}
                     />
                   </View>
                 ))}
@@ -705,6 +768,7 @@ const addToCart = async (item: FoodItem) => {
                         onIncrease={increaseQty}
                         onDecrease={decreaseQty}
                         quantity={cartItem?.quantity || 0}
+                        isLoading={addingToCart.has(item._id) || loadingItems.has(item._id)}
                       />
                     );
                   })
@@ -721,8 +785,11 @@ const addToCart = async (item: FoodItem) => {
                   userId={userData._id}
                   items={cart}
                   onOrder={(orderId) => {
-                    console.log("Payment successful! Order ID: " + orderId);
-                    // clear cart, redirect, etc.
+                    console.log("🎉 Mobile Cart: Payment successful! Order ID: " + orderId);
+                    console.log("🎉 Mobile Cart: Redirecting to payment page...");
+                    // Clear cart and redirect to payment confirmation page
+                    setCart([]);
+                    router.push(`/payment?orderId=${orderId}`);
                   }}
                 />
               </View>

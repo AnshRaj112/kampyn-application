@@ -31,6 +31,7 @@ export interface CartItem extends FoodItem {
   vendorName: string;
   vendorId: string;
   category: "Retail" | "Produce"; // Can be used for filters
+  packable?: boolean;
 }
 
 // Types of order a user can place

@@ -46,8 +46,12 @@ const PaymentPage = () => {
   const searchParams = useLocalSearchParams();
   const { orderId } = useLocalSearchParams<{ orderId?: string }>();
   const router = useRouter();
+  
+  console.log("🎉 Mobile Payment Page: Received orderId:", orderId);
+  console.log("🎉 Mobile Payment Page: All search params:", searchParams);
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [navigationReady, setNavigationReady] = useState(Platform.OS === 'web');
 
   useEffect(() => {
@@ -85,42 +89,44 @@ const PaymentPage = () => {
   useEffect(() => {
     if (!navigationReady) return;
     const fetchOrderDetails = async () => {
-      if (!orderId) {
+      if (!orderId || orderId === 'undefined') {
+        console.log("No valid orderId provided");
         setLoading(false);
         return;
       }
 
       try {
-        // Step 1: Fetch logged-in user data
-        const userResponse = await axios.get(
-          `${config.backendUrl}/api/user/auth/user`,
-          await getAuthConfig()
-        );
-        const userId = userResponse.data._id;
-
-        // Step 2: Fetch all active orders for that user
+        console.log("Fetching order details for orderId:", orderId);
+        
+        // Fetch order details directly by orderId
         const orderResponse = await axios.get(
-          `${config.backendUrl}/order/user-active/${userId}`,
+          `${config.backendUrl}/order/${orderId}`,
           await getAuthConfig()
         );
 
-        // Step 3: Find the specific order by ID
-        const order = orderResponse.data.orders.find(
-          (order: OrderDetails) => order._id === orderId
-        );
+        console.log("Order response:", orderResponse.data);
 
-        if (order) {
-          setOrderDetails(order);
+        if (orderResponse.data.success && orderResponse.data.order) {
+          setOrderDetails(orderResponse.data.order);
+        } else {
+          console.error("Order not found or invalid response");
+          setError("Order not found or invalid response");
         }
       } catch (error) {
         console.error("Error fetching order details:", error);
+        if (axios.isAxiosError(error)) {
+          console.error("Error response:", error.response?.data);
+          setError(error.response?.data?.message || "Failed to fetch order details");
+        } else {
+          setError("Failed to fetch order details");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrderDetails();
-  }, [navigationReady]);
+  }, [navigationReady, orderId]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -137,6 +143,30 @@ const PaymentPage = () => {
     return (
       <View style={styles.container}>
         <Text style={styles.loading}>Loading order details...</Text>
+      </View>
+    );
+  }
+
+  if (!orderId || orderId === 'undefined') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.heading}>Invalid Order</Text>
+        <Text style={styles.error}>No valid order ID provided. Please check your payment confirmation.</Text>
+        <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
+          <Text style={styles.buttonText}>Go to Home</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.heading}>Error</Text>
+        <Text style={styles.error}>{error}</Text>
+        <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
+          <Text style={styles.buttonText}>Go to Home</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -244,6 +274,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 32,
     color: '#666',
+  },
+  error: {
+    fontSize: 16,
+    color: '#dc2626',
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 16,
+    textAlign: 'center',
   },
   orderDetails: {
     backgroundColor: '#fff',
