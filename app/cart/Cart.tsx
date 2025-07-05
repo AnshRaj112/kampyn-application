@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet, Text,useWindowDimensions, Button } from "react-native";
+import { View, ScrollView, StyleSheet, Text,useWindowDimensions, Button, RefreshControl, ActivityIndicator } from "react-native";
 import axios from "axios";
 import CartItemCard from "../components/CartItemCard"; 
 import ExtrasCard from "../components/ExtrasCard"; 
@@ -116,6 +116,7 @@ export default function CartScreen() {
   const [extras, setExtras] = useState<FoodItem[]>([]);
   const [userLoggedIn, setUserLoggedIn] = useState<boolean>(false);
   const [userData, setUserData] = useState<{ _id: string; foodcourtId: string } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
     //const [filteredExtras, setFilteredExtras] = useState<FoodItem[]>([]);
 
  // const navigation = useNavigation();
@@ -642,12 +643,23 @@ const addToCart = async (item: FoodItem) => {
     console.log('[Cart] Added test item to guest cart:', guestCart);
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await reFetchCart();
+    setRefreshing(false);
+  };
+
  return (
     <View style={styles.container}>
       <Toast position="bottom" config={toastConfig} />
       {/* TEMP DEBUG BUTTON: Add test item to guest cart */}
       {/* <Button title="Add Test Item to Guest Cart" onPress={addTestItemToGuestCart} /> */}
-      <ScrollView contentContainerStyle={styles.cartLeft}>
+      <ScrollView
+        contentContainerStyle={styles.cartLeft}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4ea199"]} />
+        }
+      >
         {/* Debug info */}
         {cart.length === 0 ? (
           <View style={styles.emptyCartMessage}>
@@ -716,6 +728,9 @@ const addToCart = async (item: FoodItem) => {
               </View>
             )}
           </>
+        )}
+        {refreshing && (
+          <ActivityIndicator size="large" color="#4ea199" style={{ marginTop: 32 }} />
         )}
       </ScrollView>
     </View>

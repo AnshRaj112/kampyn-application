@@ -193,15 +193,6 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={styles.item}
-          onPress={() => router.push('/payment')}
-        >
-          <Feather name="credit-card" size={20} color="#f59e42" />
-          <Text style={styles.itemText}>Payment</Text>
-          <Ionicons name="chevron-forward" size={20} color="#777" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.item}
           onPress={() => {
             router.push('/fav/FavouritePage');
           }}
@@ -211,11 +202,6 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#777" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.item}>
-          <Ionicons name="notifications-outline" size={20} color="#FFA500" />
-          <Text style={styles.itemText}>Notifications</Text>
-          <Ionicons name="chevron-forward" size={20} color="#777" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.card}>

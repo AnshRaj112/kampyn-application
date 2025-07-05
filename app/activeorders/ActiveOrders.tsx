@@ -13,6 +13,7 @@ import {
     findNodeHandle,
     UIManager,
     Platform,
+    RefreshControl,
 } from "react-native";
 import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react-native";
 import axios from "axios";
@@ -23,7 +24,7 @@ import Toast from "react-native-toast-message";
 import { getToken, removeToken } from "../../utils/storage";
 import { config } from "../config";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {  useNavigationContainerRef } from 'expo-router';
 import { useRootNavigationState } from 'expo-router';
 
@@ -97,6 +98,7 @@ const ActiveOrdersPageContent: React.FC = () => {
     const [checkingAuth, setCheckingAuth] = useState(true);
     const [dropdownLayout, setDropdownLayout] = useState<LayoutRectangle | null>(null);
     const dropdownRef = useRef<View>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
 
 const [canNavigate, setCanNavigate] = useState(false);
@@ -160,80 +162,66 @@ useEffect(() => {
         };
     };
 
-    // Fetch user
-    useEffect(() => {
-        if (Platform.OS !== 'web' && (!navigationState || !navigationState.key)) return;
+    // Move fetchUserDetails out of useEffect
+    const fetchUserDetails = async () => {
+        try {
+            setCheckingAuth(true);
+            const token = await getAuthToken();
+            if (!token) {
+                setIsAuthenticated(false);
+                router.replace("/login/LoginForm");
+                return;
+            }
+            const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setUser(response.data);
+            setIsAuthenticated(true);
+        } catch (error) {
+            console.error("Error fetching user details:", error);
+            if (axios.isAxiosError(error) && error.response?.status === 403) {
+                await removeToken();
+                setIsAuthenticated(false);
+                router.replace("/login/LoginForm");
+            }
+        } finally {
+            setCheckingAuth(false);
+        }
+    };
 
-        const fetchUserDetails = async () => {
-            try {
-                setCheckingAuth(true);
-                const token = await getAuthToken();
-                if (!token) {
-                    setIsAuthenticated(false);
-                    router.replace("/login/LoginForm");
-                    return;
-                }
-                const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setUser(response.data);
-                setIsAuthenticated(true);
-            } catch (error) {
-                console.error("Error fetching user details:", error);
-                if (axios.isAxiosError(error) && error.response?.status === 403) {
-                    await removeToken();
-                    setIsAuthenticated(false);
-                    router.replace("/login/LoginForm");
-                }
-            } finally {
-                setCheckingAuth(false);
-            }
-        };
-        fetchUserDetails();
-    }, [navigationState]);
-    // Fetch colleges
-    useEffect(() => {
-        const fetchColleges = async () => {
-            if (!isAuthenticated) return;
-            try {
-                const configAuth = await getAuthConfig();
-                const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
-                setColleges(response.data);
-            } catch (error) {
-                console.error("Error fetching colleges:", error);
-            }
-        };
-        fetchColleges();
-    }, [isAuthenticated]);
+    // Move fetchColleges out of useEffect
+    const fetchColleges = async () => {
+        if (!isAuthenticated) return;
+        try {
+            const configAuth = await getAuthConfig();
+            const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
+            setColleges(response.data);
+        } catch (error) {
+            console.error("Error fetching colleges:", error);
+        }
+    };
 
     // Fetch active orders based on selected college
-    useEffect(() => {
-        const fetchActiveOrders = async () => {
-            if (!user?._id) return;
-
-            try {
-                setLoading(true);
-                const configAuth = await getAuthConfig();
-                const url = selectedCollege
-                    ? `${config.backendUrl}/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
-                    : `${config.backendUrl}/order/user-active/${user._id}`;
-
-                const response = await axios.get(url, configAuth);
-                console.log('Active orders response:', response.data);
-                setActiveOrders(response.data.orders || []);
-            } catch (error) {
-                console.error('Error fetching active orders:', error);
-                if (axios.isAxiosError(error) && error.response?.status === 401) {
-                    router.push('/login/LoginForm'); // Use router from useRouter()
-                }
-            } finally {
-                setLoading(false);
+    const fetchActiveOrders = async () => {
+        if (!user?._id) return;
+        try {
+            setLoading(true);
+            const configAuth = await getAuthConfig();
+            const url = selectedCollege
+                ? `${config.backendUrl}/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
+                : `${config.backendUrl}/order/user-active/${user._id}`;
+            const response = await axios.get(url, configAuth);
+            setActiveOrders(response.data.orders || []);
+        } catch (error) {
+            console.error('Error fetching active orders:', error);
+            if (axios.isAxiosError(error) && error.response?.status === 401) {
+                router.push('/login/LoginForm');
             }
-        };
-
-        fetchActiveOrders();
-    }, [user?._id, selectedCollege]);
-
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
 
     // Handle URL query parameter on initial load
     useEffect(() => {
@@ -315,80 +303,32 @@ useEffect(() => {
         }
     };
 
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchActiveOrders();
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            // Refetch all APIs when the page is focused
+            fetchUserDetails();
+            fetchColleges();
+            fetchActiveOrders();
+        }, [selectedCollege, user?._id, isAuthenticated])
+    );
 
     return (
-        <ScrollView style={styles.container}>
+        <View style={styles.container}>
             <Toast />
-            <Text style={styles.header}>Your Active Orders</Text>
-
-            {/* Dropdown */}
-            <View style={styles.dropdownContainer}>
-                <TouchableOpacity
-                    style={styles.dropdownButton}
-                    onPress={() => setIsDropdownOpen(!isDropdownOpen)}
-                >
-                    <Text style={styles.dropdownButtonText}>
-                        {selectedCollege ? selectedCollege.fullName : 'Select your college'}
-                    </Text>
-                    <Ionicons
-                        name="chevron-down"
-                        size={20}
-                        style={{
-                            transform: [{ rotate: isDropdownOpen ? '180deg' : '0deg' }],
-                        }}
-                        color="#333"
-                    />
-                </TouchableOpacity>
-
-                {isDropdownOpen && (
-                    <View style={styles.dropdownMenu}>
-                        <TouchableOpacity
-                            style={styles.dropdownItem}
-                            onPress={() => handleCollegeSelect(null)}
-                        >
-                            <Text>All Colleges</Text>
-                        </TouchableOpacity>
-                        {colleges.map((college: any) => (
-                            <TouchableOpacity
-                                key={college._id}
-                                style={styles.dropdownItem}
-                                onPress={() => handleCollegeSelect(college)}
-                            >
-                                <Text>{college.fullName}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )}
-            </View>
-
-            {/* Section Header */}
-            <View style={styles.collegeHeader}>
-                <Text style={styles.collegeName}>
-                    {selectedCollege ? selectedCollege.fullName : 'All Colleges'}
-                </Text>
-                <Text style={styles.subTitle}>Your Active Orders</Text>
-            </View>
-
-            {/* Loader / Empty / List */}
-            {loading ? (
-                <Text style={styles.loadingText}>Loading...</Text>
+            {loading && !refreshing ? (
+                <ActivityIndicator size="large" color="#4ea199" style={{ marginTop: 32 }} />
             ) : activeOrders.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyTitle}>No active orders found</Text>
                     <Text>You don't have any active orders at the moment.</Text>
-
-
-                    {/* <TouchableOpacity
-            style={styles.homeButton}
-            onPress={() => navigation.navigate('/login/LoginForm')}
-          >
-            <Text style={styles.homeButtonText}>Go to Home</Text>
-          </TouchableOpacity> */}
-
-                    {<TouchableOpacity onPress={() => router.push('/login/LoginForm')
-                    }>
+                    <TouchableOpacity onPress={() => router.push('/login/LoginForm')}>
                         <Text>Go to Login</Text>
-                    </TouchableOpacity>}
+                    </TouchableOpacity>
                 </View>
             ) : (
                 <FlatList
@@ -451,9 +391,63 @@ useEffect(() => {
                             </View>
                         </View>
                     )}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4ea199"]} />
+                    }
+                    ListHeaderComponent={
+                        <>
+                            <Text style={styles.header}>Your Active Orders</Text>
+                            {/* Dropdown */}
+                            <View style={styles.dropdownContainer}>
+                                <TouchableOpacity
+                                    style={styles.dropdownButton}
+                                    onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <Text style={styles.dropdownButtonText}>
+                                        {selectedCollege ? selectedCollege.fullName : 'Select your college'}
+                                    </Text>
+                                    <Ionicons
+                                        name="chevron-down"
+                                        size={20}
+                                        style={{
+                                            transform: [{ rotate: isDropdownOpen ? '180deg' : '0deg' }],
+                                        }}
+                                        color="#333"
+                                    />
+                                </TouchableOpacity>
+
+                                {isDropdownOpen && (
+                                    <View style={styles.dropdownMenu}>
+                                        <TouchableOpacity
+                                            style={styles.dropdownItem}
+                                            onPress={() => handleCollegeSelect(null)}
+                                        >
+                                            <Text>All Colleges</Text>
+                                        </TouchableOpacity>
+                                        {colleges.map((college: any) => (
+                                            <TouchableOpacity
+                                                key={college._id}
+                                                style={styles.dropdownItem}
+                                                onPress={() => handleCollegeSelect(college)}
+                                            >
+                                                <Text>{college.fullName}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+                            {/* Section Header */}
+                            <View style={styles.collegeHeader}>
+                                <Text style={styles.collegeName}>
+                                    {selectedCollege ? selectedCollege.fullName : 'All Colleges'}
+                                </Text>
+                                <Text style={styles.subTitle}>Your Active Orders</Text>
+                            </View>
+                        </>
+                    }
                 />
             )}
-        </ScrollView>
+        </View>
     );
 };
 export default ActiveOrdersPageContent;
