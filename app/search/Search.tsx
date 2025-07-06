@@ -477,7 +477,17 @@ export default function SearchPage() {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Search</Text>
-          <View style={styles.placeholder} />
+          <TouchableOpacity
+            style={styles.cartButton}
+            onPress={() => router.push('/cart')}
+          >
+            <Ionicons name="cart-outline" size={24} color="#fff" />
+            {cartItems.length > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4ea199" />
@@ -498,7 +508,17 @@ export default function SearchPage() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Search</Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity
+          style={styles.cartButton}
+          onPress={() => router.push('/cart')}
+        >
+          <Ionicons name="cart-outline" size={24} color="#fff" />
+          {cartItems.length > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Search Input */}
@@ -579,6 +599,26 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
+  },
+  cartButton: {
+    padding: 8,
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   searchContainer: {
     flexDirection: 'row',
