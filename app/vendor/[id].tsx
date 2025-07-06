@@ -428,8 +428,18 @@ const VendorPage = () => {
         >
           <Ionicons name="arrow-back" size={24} color="#007AFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{vendorData.foodCourtName}</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={styles.headerTitle}>{vendorData.foodCourtName || 'Vendor Menu'}</Text>
+        <TouchableOpacity
+          style={styles.cartButton}
+          onPress={() => router.push('/cart')}
+        >
+          <Ionicons name="cart-outline" size={24} color="#007AFF" />
+          {userData?.cart && userData.cart.length > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{userData.cart.length.toString()}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
@@ -461,10 +471,10 @@ const VendorPage = () => {
             <TouchableOpacity
               key={type}
               style={[styles.typeButton, selectedType === type && styles.activeTypeButton]}
-              onPress={() => setSelectedType(type)}
+              onPress={() => setSelectedType(type || null)}
             >
               <Text style={[styles.typeButtonText, selectedType === type && styles.activeTypeButtonText]}>
-                {type?.charAt(0).toUpperCase() + type?.slice(1)}
+                {type ? type.charAt(0).toUpperCase() + type.slice(1) : ''}
               </Text>
             </TouchableOpacity>
           ))}
@@ -552,6 +562,26 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 40,
+  },
+  cartButton: {
+    padding: 8,
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   searchContainer: {
     position: 'relative',
