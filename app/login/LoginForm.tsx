@@ -103,7 +103,7 @@ export default function LoginScreen() {
         Toast.show({
           type: 'success',
           text1: 'Login Successful',
-          text2: 'Redirecting to your profile...',
+          text2: 'Redirecting to home...',
           position: 'bottom',
         });
 
@@ -111,10 +111,10 @@ export default function LoginScreen() {
         setError('');
 
         // Navigate after a short delay
-        console.log('Initiating navigation to profile...');
+        console.log('Initiating navigation to home...');
         // Navigate immediately after successful login
-        console.log('Executing navigation to profile');
-        router.replace('/profile/ProfilePage');
+        console.log('Executing navigation to home');
+        router.replace('/home');
       } catch (storageError) {
         console.error('Token storage failed:', storageError);
         throw new Error('Failed to store authentication token');
