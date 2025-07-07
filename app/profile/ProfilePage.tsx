@@ -121,7 +121,7 @@ export default function ProfileScreen() {
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled={true}
     >
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/home')}>
         <Ionicons name="chevron-back" size={24} color="#009688" />
         <Text style={styles.backText}>Profile</Text>
       </TouchableOpacity>

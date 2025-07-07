@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { getToken } from '../../utils/storage';
 
 export default function PickCollege() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const colleges = [
     'MIT Banglore',
@@ -21,11 +23,25 @@ export default function PickCollege() {
     'KIIT'
   ];
 
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await getToken();
+      setIsLoggedIn(!!token);
+    };
+    checkLoginStatus();
+  }, []);
+
   const handleSelectCollege = (college: string) => {
-    router.push({
-      pathname: '/signup/SignupForm',
-      params: { college },
-    });
+    if (isLoggedIn) {
+      // If user is logged in, navigate to main app (you can change this to appropriate page)
+      router.push('/profile/ProfilePage');
+    } else {
+      // If user is not logged in, navigate to signup
+      router.push({
+        pathname: '/signup/SignupForm',
+        params: { college },
+      });
+    }
   };
 
   const handleGoBack = () => {
