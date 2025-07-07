@@ -20,7 +20,7 @@ const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove,
         <View style={styles.placeholder} />
       )}
       <View style={styles.details}>
-        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.price}>₹{item.price}</Text>
       </View>
     </View>
@@ -106,11 +106,13 @@ const styles = StyleSheet.create({
   details: {
     marginLeft: 12,
     flexShrink: 1,
+    maxWidth: 140,
   },
   name: {
     fontSize: 16,
     fontWeight: "600",
     color: "#01796f",
+    
   },
   price: {
     fontSize: 14,

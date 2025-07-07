@@ -317,265 +317,242 @@ useEffect(() => {
         }, [selectedCollege, user?._id, isAuthenticated])
     );
 
-    return (
-        <View style={styles.container}>
-            <Toast />
-            {loading && !refreshing ? (
-                <ActivityIndicator size="large" color="#4ea199" style={{ marginTop: 32 }} />
-            ) : activeOrders.length === 0 ? (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyTitle}>No active orders found</Text>
-                    <Text>You don't have any active orders at the moment.</Text>
-                    <TouchableOpacity onPress={() => router.push('/login/LoginForm')}>
-                        <Text>Go to Login</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <FlatList
-                    data={activeOrders}
-                    keyExtractor={(item) => item._id}
-                    renderItem={({ item: order }) => (
-                        <View style={styles.orderCard}>
-                            <View style={styles.orderHeader}>
-                                <View>
-                                    <Text style={styles.orderId}>
-                                        Order #{order.orderNumber && order.orderNumber !== 'Unknown' ? order.orderNumber : order.orderId}
-                                    </Text>
-                                    <Text>{formatDate(order.createdAt)}</Text>
-                                    {order.vendorId && (
-                                        <View>
-                                            <Text>
-                                                <Text style={{ fontWeight: 'bold' }}>Vendor: </Text>
-                                                {order.vendorId.fullName || 'Unknown Vendor'}
-                                            </Text>
-                                            {order.vendorId.college && (
-                                                <Text>
-                                                    <Text style={{ fontWeight: 'bold' }}>College: </Text>
-                                                    {order.vendorId.college.fullName || 'Unknown College'}
-                                                </Text>
-                                            )}
-                                        </View>
-                                    )}
-                                </View>
-                                <View>
-                                    <Text
-                                        style={[
-                                            styles.orderStatus,
-                                            { backgroundColor: getStatusColor(order.status) },
-                                        ]}
-                                    >
-                                        {order.status}
-                                    </Text>
-                                    <Text style={styles.orderType}>{order.orderType}</Text>
-                                </View>
-                            </View>
 
-                            <View style={styles.orderDetails}>
-                                <Text style={styles.collectorName}>{order.collectorName}</Text>
-                                <Text>{order.collectorPhone}</Text>
-                                {order.address && <Text>{order.address}</Text>}
 
-                                {order.items.map((item, idx) => (
-                                    <View key={idx} style={styles.itemCard}>
-                                        <View>
-                                            <Text style={styles.itemName}>{item.name}</Text>
-                                            <Text style={styles.itemDetails}>
-                                                ₹{item.price} per {item.unit} • {item.type}
-                                            </Text>
-                                        </View>
-                                        <Text style={styles.itemQuantity}>{item.quantity}</Text>
-                                    </View>
-                                ))}
 
-                                <Text style={styles.totalAmount}>Total: ₹{order.total}</Text>
-                            </View>
-                        </View>
-                    )}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4ea199"]} />
-                    }
-                    ListHeaderComponent={
-                        <>
-                            <Text style={styles.header}>Your Active Orders</Text>
-                            {/* Dropdown */}
-                            <View style={styles.dropdownContainer}>
-                                <TouchableOpacity
-                                    style={styles.dropdownButton}
-                                    onPress={() => setIsDropdownOpen(!isDropdownOpen)}
-                                >
-                                    <Text style={styles.dropdownButtonText}>
-                                        {selectedCollege ? selectedCollege.fullName : 'Select your college'}
-                                    </Text>
-                                    <Ionicons
-                                        name="chevron-down"
-                                        size={20}
-                                        style={{
-                                            transform: [{ rotate: isDropdownOpen ? '180deg' : '0deg' }],
-                                        }}
-                                        color="#333"
-                                    />
-                                </TouchableOpacity>
-
-                                {isDropdownOpen && (
-                                    <View style={styles.dropdownMenu}>
-                                        <TouchableOpacity
-                                            style={styles.dropdownItem}
-                                            onPress={() => handleCollegeSelect(null)}
-                                        >
-                                            <Text>All Colleges</Text>
-                                        </TouchableOpacity>
-                                        {colleges.map((college: any) => (
-                                            <TouchableOpacity
-                                                key={college._id}
-                                                style={styles.dropdownItem}
-                                                onPress={() => handleCollegeSelect(college)}
-                                            >
-                                                <Text>{college.fullName}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                )}
-                            </View>
-                            {/* Section Header */}
-                            <View style={styles.collegeHeader}>
-                                <Text style={styles.collegeName}>
-                                    {selectedCollege ? selectedCollege.fullName : 'All Colleges'}
-                                </Text>
-                                <Text style={styles.subTitle}>Your Active Orders</Text>
-                            </View>
-                        </>
-                    }
-                />
-            )}
+return (
+<View style={styles.container}>
+      <Toast />
+      {loading && !refreshing ? (
+        <ActivityIndicator size="large" color="#4ea199" style={{ marginTop: 32 }} />
+      ) : activeOrders.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>No active orders found</Text>
+          <Text>You don't have any active orders at the moment.</Text>
+          <TouchableOpacity onPress={() => router.push('/login/LoginForm')}>
+            <Text style={styles.homeButtonText}>Go to Login</Text>
+          </TouchableOpacity>
         </View>
-    );
+      ) : (
+        <FlatList
+          data={activeOrders}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item: order }) => (
+            <View style={styles.simpleOrderCard}>
+              <View style={styles.simpleOrderHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                 
+                  <View style={{ marginLeft: 12 }}>
+                    <Text style={styles.vendorNameText}>
+                      {order.vendorId?.fullName || 'Unknown Vendor'}
+                    </Text>
+                    <Text style={styles.orderAmount}>₹{order.total?.toFixed(2)}</Text>
+                    <Text style={styles.orderDateTime}>
+                      {formatDate(order.createdAt)} • {order.items.length} Item{order.items.length > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                </View>
+                <View>
+                  <Text style={styles.orderNumber}>#{order.orderNumber?.split('-').pop()}</Text>
+                  <Text style={styles.statusDelivered}>{order.status?.toLowerCase()}</Text>
+                                          <Text style={styles.orderType}>{order.orderType}</Text>
+
+                </View>
+              </View>
+            </View>
+          )}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4ea199"]} />
+          }
+          ListHeaderComponent={
+            <>
+              {/* <Text style={styles.header}>Your Active Orders</Text>
+              <View style={styles.dropdownContainer}>
+                <TouchableOpacity
+                  style={styles.dropdownButton}
+                  onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                  <Text style={styles.dropdownButtonText}>
+                    {selectedCollege ? selectedCollege.fullName : 'Select your college'}
+                  </Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={20}
+                    style={{ transform: [{ rotate: isDropdownOpen ? '180deg' : '0deg' }] }}
+                    color="#333"
+                  />
+                </TouchableOpacity>
+                {isDropdownOpen && (
+                  <View style={styles.dropdownMenu}>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => handleCollegeSelect(null)}
+                    >
+                      <Text>All Colleges</Text>
+                    </TouchableOpacity>
+                    {colleges.map((college) => (
+                      <TouchableOpacity
+                        key={college._id}
+                        style={styles.dropdownItem}
+                        onPress={() => handleCollegeSelect(college)}
+                      >
+                        <Text>{college.fullName}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View> */}
+              <View style={styles.collegeHeader}>
+                {/* <Text style={styles.collegeName}>
+                  {selectedCollege ? selectedCollege.fullName : 'All Colleges'}
+                </Text> */}
+                <Text style={styles.subTitle}>Your Active Orders</Text>
+              </View>
+            </>
+          }
+        />
+      )}
+    </View>
+  );
 };
+
 export default ActiveOrdersPageContent;
+
 const styles = StyleSheet.create({
-    container: {
-        minHeight: '100%',
-        backgroundColor: '#f8fafc',
-        padding: 16,
-        marginTop: 32,
-    },
-    header: {
-        //alignItems: 'center',
-        marginBottom: 48,
-        textAlign:'center'
-    },
-    headerText: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#4ea199',
-    },
-    dropdownContainer: {
-        width: '100%',
-        maxWidth: 600,
-        alignSelf: 'center',
-        marginBottom: 48,
-        position: 'relative',
-    },
-    dropdownButton: {
-        width: '100%',
-        backgroundColor: '#e5e7eb',
-        borderColor: '#d1d5db',
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        fontSize: 16,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        elevation: 2,
-    },
-    dropdownMenu: {
-        backgroundColor: 'white',
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        right: 0,
-        borderColor: '#d1d5db',
-        borderWidth: 1,
-        borderRadius: 12,
-        elevation: 4,
-        marginTop: 8,
-        maxHeight: 250,
-    },
-    dropdownItem: {
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        fontSize: 16,
-        borderBottomColor: '#f3f4f6',
-        borderBottomWidth: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    dropdownButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#374151',
-    },
-    contentSection: {
-        width: '100%',
-        maxWidth: 1200,
-        alignSelf: 'center',
-    },
-    collegeHeader: {
-        marginBottom: 32,
-    },
-    collegeName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#4ea199',
-        marginBottom: 8,
-    },
-    subTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#4ea199',
-    },
-    orderGrid: {
-        gap: 16,
-    },
-    orderCard: {
-        backgroundColor: '#e5e7eb',
-        borderRadius: 16,
-        padding: 24,
-        marginBottom: 24,
-        elevation: 4,
-    },
-    orderHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-    },
-    orderInfo: {
-        flex: 1,
-    },
-    orderId: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    orderDate: {
-        fontSize: 14,
-        color: '#666',
-    },
-    orderStatus: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: 'white',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 6,
-        textTransform: 'uppercase',
-        overflow: 'hidden',
-    },
-    orderType: {
+  container: {
+   flex: 1,
+  backgroundColor: '#f8fafc',
+  paddingHorizontal: 16,
+  paddingTop: 16, 
+  },
+  header: {
+    marginBottom: 48,
+    textAlign: 'center',
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#4ea199',
+  },
+  dropdownContainer: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    marginBottom: 48,
+    position: 'relative',
+  },
+  dropdownButton: {
+    width: '100%',
+    backgroundColor: '#e5e7eb',
+    borderColor: '#d1d5db',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  dropdownMenu: {
+    backgroundColor: 'white',
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    borderColor: '#d1d5db',
+    borderWidth: 1,
+    borderRadius: 12,
+    elevation: 4,
+    marginTop: 8,
+    maxHeight: 250,
+  },
+  dropdownItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    fontSize: 16,
+    borderBottomColor: '#f3f4f6',
+    borderBottomWidth: 1,
+  },
+  collegeHeader: {
+    marginBottom: 32,
+  },
+  collegeName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4ea199',
+    marginBottom: 8,
+  },
+  subTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4ea199',
+  },
+  emptyState: {
+    alignItems: 'center',
+    marginTop: 48,
+  },
+  emptyTitle: {
+    textAlign: 'center',
+    fontSize: 18,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  homeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4ea199',
+    marginTop: 12,
+  },
+  simpleOrderCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  simpleOrderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  vendorLogoPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#d1d5db',
+  },
+  vendorNameText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  orderAmount: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginTop: 2,
+    color: '#111827',
+  },
+  orderDateTime: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  orderNumber: {
+    fontSize: 13,
+    color: '#9ca3af',
+    textAlign: 'right',
+    marginBottom: 4,
+  },
+   orderType: {
         fontSize: 12,
         fontWeight: '600',
         backgroundColor: '#f3f4f6',
@@ -585,133 +562,14 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         textTransform: 'uppercase',
         marginLeft: 8,
+       // marginRight:6
+       marginTop:6
     },
-    orderSource: {
-        marginTop: 8,
-    },
-    loadingText: {
-        textAlign: 'center',
-        marginBottom: 48,
-    },
-    emptyTitle: {
-        textAlign: 'center',
-        fontSize: 17.6,
-        marginTop: 48,
-        color: '#6b7280',
-    },
-    emptyMessage: {
-
-    },
-    vendorName: {
-        fontSize: 14,
-        color: '#374151',
-        marginBottom: 4,
-    },
-    collegeTag: {
-        fontSize: 14,
-        color: '#374151',
-    },
-    orderDetails: {
-        marginTop: 16,
-    },
-    collectorInfo: {
-        backgroundColor: '#f8f9fa',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    collectorName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    collectorPhone: {
-        fontSize: 14,
-        color: '#666',
-    },
-    address: {
-        fontSize: 14,
-        color: '#666',
-        fontStyle: 'italic',
-        marginTop: 4,
-    },
-    itemsList: {
-        marginVertical: 16,
-        maxHeight: 200,
-        borderColor: '#e5e7eb',
-        borderWidth: 1,
-        borderRadius: 8,
-        padding: 8,
-    },
-    itemCard: {
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 8,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    itemInfo: {
-        flex: 1,
-    },
-    itemName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    itemDetails: {
-        fontSize: 13,
-        color: '#666',
-    },
-    itemQuantity: {
-        backgroundColor: '#4ea199',
-        color: '#fff',
-        fontSize: 13,
-        fontWeight: '600',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-        minWidth: 24,
-        textAlign: 'center',
-    },
-    orderTotal: {
-        borderTopColor: '#d1d5db',
-        borderTopWidth: 2,
-        paddingTop: 16,
-        marginTop: 16,
-        alignItems: 'flex-end',
-    },
-    totalAmount: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#4ea199',
-    },
-    emptyState: {
-        alignItems: 'center',
-        marginTop: 48,
-    },
-    emptyText: {
-        fontSize: 18,
-        color: '#6b7280',
-        textAlign: 'center',
-    },
-    homeButton: {
-        backgroundColor: '#4ea199',
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        marginTop: 16,
-    },
-    homeButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: 'white',
-        textAlign: 'center',
-    },
+  statusDelivered: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#10b981',
+    textTransform: 'capitalize',
+    textAlign: 'right',
+  },
 });
-
-
-

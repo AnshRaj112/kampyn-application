@@ -21,8 +21,6 @@ import { config } from "../../config";
 
 // IMPORTANT: Replace '192.168.1.42' with your computer's local IP address for mobile access
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://192.168.1.42:5001";
-const { width } = useWindowDimensions();
-const isMobile = width < 1100;
 
 
 interface ExtraItem {
@@ -113,6 +111,9 @@ const toastConfig = {
 };
 
 export default function CartScreen() {
+  const { width } = useWindowDimensions();
+const isMobile = width < 1100;
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [extras, setExtras] = useState<FoodItem[]>([]);
   const [userLoggedIn, setUserLoggedIn] = useState<boolean>(false);
@@ -710,6 +711,7 @@ const addToCart = async (item: FoodItem) => {
     await reFetchCart();
     setRefreshing(false);
   };
+
 
  return (
     <View style={styles.container}>
