@@ -50,6 +50,7 @@ const PaymentPage = () => {
   console.log("🎉 Mobile Payment Page: Received orderId:", orderId);
   console.log("🎉 Mobile Payment Page: All search params:", searchParams);
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [vendorPreparationTime, setVendorPreparationTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [navigationReady, setNavigationReady] = useState(Platform.OS === 'web');
@@ -108,6 +109,22 @@ const PaymentPage = () => {
 
         if (orderResponse.data.success && orderResponse.data.order) {
           setOrderDetails(orderResponse.data.order);
+          
+          // Fetch vendor delivery settings to get preparation time
+          try {
+            const vendorId = orderResponse.data.order.vendorId._id;
+            const deliverySettingsResponse = await axios.get(
+              `${config.backendUrl}/api/vendor/${vendorId}/delivery-settings`
+            );
+            
+            if (deliverySettingsResponse.data.success) {
+              setVendorPreparationTime(deliverySettingsResponse.data.data.deliveryPreparationTime);
+            }
+          } catch (error) {
+            console.error("Failed to fetch vendor preparation time:", error);
+            // Set default preparation time if we can't fetch it
+            setVendorPreparationTime(30);
+          }
         } else {
           console.error("Order not found or invalid response");
           setError("Order not found or invalid response");
@@ -231,6 +248,16 @@ const PaymentPage = () => {
               ))}
             </View>
           </View>
+
+          {/* Estimated Preparation Time */}
+          {vendorPreparationTime && (
+            <View style={styles.preparationTime}>
+              <Text style={styles.preparationTimeHeading}>⏱️ Estimated Preparation Time</Text>
+              <Text style={styles.preparationTimeText}>
+                Your order will be ready in approximately <Text style={styles.bold}>{vendorPreparationTime} minutes</Text>
+              </Text>
+            </View>
+          )}
 
           <View style={styles.orderTotal}>
             <Text style={styles.totalAmount}>Total: ₹{orderDetails.total}</Text>
@@ -368,6 +395,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 4,
     minWidth: 24,
+    textAlign: 'center',
+  },
+  preparationTime: {
+    marginVertical: 16,
+    padding: 16,
+    backgroundColor: '#fff3cd',
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  preparationTimeHeading: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  preparationTimeText: {
+    fontSize: 14,
+    color: '#856404',
     textAlign: 'center',
   },
   orderTotal: {

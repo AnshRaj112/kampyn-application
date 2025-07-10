@@ -33,6 +33,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [charges, setCharges] = useState({ packingCharge: 5, deliveryCharge: 50 });
+  const [vendorDeliverySettings, setVendorDeliverySettings] = useState<{ offersDelivery: boolean; deliveryPreparationTime: number } | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentHtml, setPaymentHtml] = useState("");
@@ -230,6 +231,32 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         } else {
           console.warn("⚠️ Mobile: No vendorId found in cart response");
         }
+
+        // Fetch vendor delivery settings
+        if (cartResponse.data.vendorId) {
+          try {
+            console.log("🔄 Mobile: Fetching delivery settings for vendorId:", cartResponse.data.vendorId);
+            
+            const deliverySettingsResponse = await axios.get(
+              `${config.backendUrl}/api/vendor/${cartResponse.data.vendorId}/delivery-settings`,
+              { withCredentials: true }
+            );
+            
+            console.log("📦 Mobile: Delivery settings response:", deliverySettingsResponse.data);
+            
+            if (deliverySettingsResponse.data.success) {
+              setVendorDeliverySettings(deliverySettingsResponse.data.data);
+            } else {
+              console.error("❌ Mobile: Failed to fetch delivery settings:", deliverySettingsResponse.data.message);
+              // If we can't fetch delivery settings, assume delivery is available
+              setVendorDeliverySettings({ offersDelivery: true, deliveryPreparationTime: 30 });
+            }
+          } catch (error) {
+            console.error("❌ Mobile: Failed to fetch delivery settings:", error);
+            // If we can't fetch delivery settings, assume delivery is available
+            setVendorDeliverySettings({ offersDelivery: true, deliveryPreparationTime: 30 });
+          }
+        }
       } catch (error) {
         console.error("❌ Mobile: Failed to fetch university charges:", error);
         // Use default charges if fetch fails
@@ -240,12 +267,21 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     fetchCharges();
   }, [userId]);
 
+  // Auto-switch to takeaway if delivery is disabled
+  useEffect(() => {
+    if (vendorDeliverySettings && !vendorDeliverySettings.offersDelivery && orderType === "delivery") {
+      console.log("🔄 Mobile: Delivery disabled by vendor, switching to takeaway");
+      setOrderType("takeaway");
+    }
+  }, [vendorDeliverySettings, orderType]);
+
   // Debug logging
   console.log("🔍 Mobile BillBox Debug:", {
     items: items.map(i => ({ name: i.name, category: i.category, packable: i.packable, quantity: i.quantity })),
     orderType,
     charges,
-    packableItems: items.filter(i => i.packable === true)
+    packableItems: items.filter(i => i.packable === true),
+    vendorDeliverySettings
   });
   
   // More robust packable item detection
@@ -918,17 +954,24 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     <>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.segmentedControl}>
-          {(["takeaway", "delivery", "dinein"] as OrderType[]).map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.segment, orderType === t && styles.activeSegment]}
-              onPress={() => setOrderType(t)}
-            >
-              <Text style={orderType === t ? styles.activeText : styles.segmentText}>
-                {t === "takeaway" ? "Takeaway" : t === "delivery" ? "Delivery" : "Dine In"}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {(["takeaway", "delivery", "dinein"] as OrderType[]).map((t) => {
+            // Hide delivery option if vendor doesn't offer delivery
+            if (t === "delivery" && vendorDeliverySettings && !vendorDeliverySettings.offersDelivery) {
+              return null;
+            }
+            
+            return (
+              <TouchableOpacity
+                key={t}
+                style={[styles.segment, orderType === t && styles.activeSegment]}
+                onPress={() => setOrderType(t)}
+              >
+                <Text style={orderType === t ? styles.activeText : styles.segmentText}>
+                  {t === "takeaway" ? "Takeaway" : t === "delivery" ? "Delivery" : "Dine In"}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <TextInput
@@ -969,6 +1012,14 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
               </View>
             ))}
           </ScrollView>
+
+          {/* Estimated Preparation Time */}
+          {vendorDeliverySettings && (
+            <View style={styles.preparationTime}>
+              <Text style={styles.preparationTimeText}>⏱️ Estimated preparation time</Text>
+              <Text style={styles.preparationTimeText}>{vendorDeliverySettings.deliveryPreparationTime} minutes</Text>
+            </View>
+          )}
 
           {packaging > 0 && (
             <View style={styles.extra}>
@@ -1284,6 +1335,20 @@ const styles = StyleSheet.create({
   extraText: {
     fontStyle: "italic",
     color: "#555",
+  },
+  preparationTime: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#fff3cd",
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ffeaa7",
+    marginVertical: 8,
+  },
+  preparationTimeText: {
+    fontSize: 14,
+    color: "#856404",
   },
   divider: {
     height: 1,

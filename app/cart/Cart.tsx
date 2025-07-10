@@ -8,8 +8,7 @@ import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { FoodItem, CartItem } from "@/types/types";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getToken, removeToken } from "../../utils/storage";
+import { getToken, removeToken, getGuestCart, saveGuestCart } from "../../utils/storage";
 import { TouchableOpacity } from 'react-native';
 import { useRouter } from "expo-router";
 import {  Platform } from 'react-native';
@@ -21,6 +20,8 @@ import { config } from "../../config";
 
 // IMPORTANT: Replace '192.168.1.42' with your computer's local IP address for mobile access
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://192.168.1.42:5001";
+const { width } = useWindowDimensions();
+const isMobile = width < 1100;
 
 
 interface ExtraItem {
@@ -66,7 +67,7 @@ interface GuestCartItem extends Omit<CartItem, 'category'> {
 
 export const getAuthHeaders = async () => {
   try {
-    const token = await AsyncStorage.getItem("token");
+    const token = await getToken();
 
     if (!token) {
       console.warn("[CartScreen] getAuthHeaders: no token in AsyncStorage");
@@ -152,36 +153,43 @@ const isMobile = width < 1100;
   // Move fetchUserAndCart here so it can access all state setters
   const fetchUserAndCart = async () => {
     try {
-      const token = await AsyncStorage.getItem("token");
+      const token = await getToken();
       console.log("[Cart] Token on mobile:", token);
+      console.log("[Cart] Backend URL:", config.backendUrl);
 
       if (!token) {
         setUserLoggedIn(false);
-        const rawGuest = await AsyncStorage.getItem("guest_cart") || "[]";
-        console.log("[Cart] Guest cart from AsyncStorage:", rawGuest);
+        const rawGuest = await getGuestCart();
+        console.log("[Cart] Guest cart from storage:", rawGuest);
         const guestCart = JSON.parse(rawGuest);
         setCart(guestCart);
         return;
       }
 
+      console.log("[Cart] Making auth request to:", `${config.backendUrl}/api/user/auth/user`);
       const res = await fetch(`${config.backendUrl}/api/user/auth/user`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log("[Cart] Auth response status:", res.status, res.ok);
+
       if (!res.ok) {
-        await AsyncStorage.removeItem("token");
+        console.log("[Cart] Auth failed, removing token and falling back to guest cart");
+        await removeToken();
         setUserLoggedIn(false);
-        const rawGuest = await AsyncStorage.getItem("guest_cart") || "[]";
-        console.log("[Cart] Guest cart from AsyncStorage (after token fail):", rawGuest);
+        const rawGuest = await getGuestCart();
+        console.log("[Cart] Guest cart from storage (after token fail):", rawGuest);
         setCart(JSON.parse(rawGuest));
         return;
       }
 
       const user = await res.json();
+      console.log("[Cart] User data received:", user);
       setUserLoggedIn(true);
       setUserData(user);
 
+      console.log("[Cart] Making cart request to:", `${config.backendUrl}/cart/${user._id}`);
       const cartRes = await axios.get<CartResponse>(
         `${config.backendUrl}/cart/${user._id}`,
         await getAuthHeaders()
@@ -215,7 +223,7 @@ const isMobile = width < 1100;
       await fetchExtras(user._id);
     } catch (error) {
       console.error("[Cart] Error in fetchUserAndCart():", error);
-      await AsyncStorage.removeItem("token");
+      await removeToken();
       setUserLoggedIn(false);
     }
   };
@@ -391,7 +399,7 @@ const increaseQty = async (id: string) => {
     ) as CartItem[];
     console.log("[Cart.tsx] (guest) increaseQty → new cart:", updatedCart);
     setCart(updatedCart);
-    localStorage.setItem('guest_cart', JSON.stringify(updatedCart));
+    await saveGuestCart(JSON.stringify(updatedCart));
     Toast.show({
       type: 'success',
       text1: 'Quantity Updated',
@@ -467,7 +475,7 @@ const decreaseQty = async (id: string) => {
 
     console.log("[CartScreen] (guest) decreaseQty → new cart:", updatedCart);
     setCart(updatedCart);
-    localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
+    await saveGuestCart(JSON.stringify(updatedCart));
     Toast.show({
       type: 'info',
       text1: 'Quantity Updated',
@@ -526,7 +534,7 @@ const removeItem = async (id: string) => {
     const updatedCart = cart.filter((item) => item._id !== id) as CartItem[];
     console.log("[CartScreen] (guest) removeItem → new cart:", updatedCart);
     setCart(updatedCart);
-    localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
+    await saveGuestCart(JSON.stringify(updatedCart));
 
     Toast.show({
       type: 'error',
@@ -654,7 +662,7 @@ const addToCart = async (item: FoodItem) => {
     console.log("[CartScreen] (guest) addToCart → new cart:", updatedCart);
     setCart(updatedCart);
 
-    await AsyncStorage.setItem("guest_cart", JSON.stringify(updatedCart));
+    await saveGuestCart(JSON.stringify(updatedCart));
 
     Toast.show({
       type: "success",
@@ -698,10 +706,10 @@ const addToCart = async (item: FoodItem) => {
       vendorId: 'guest',
       category: 'Retail',
     };
-    const rawGuest = await AsyncStorage.getItem('guest_cart') || '[]';
+    const rawGuest = await getGuestCart();
     const guestCart = JSON.parse(rawGuest);
     guestCart.push(testItem);
-    await AsyncStorage.setItem('guest_cart', JSON.stringify(guestCart));
+    await saveGuestCart(JSON.stringify(guestCart));
     setCart(guestCart);
     console.log('[Cart] Added test item to guest cart:', guestCart);
   };

@@ -690,10 +690,16 @@ export default function CollegePage() {
             {Object.keys(cart).length > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>
-                  {Object.values(cart).reduce((a, b) => a + b, 0)}
+                  {Object.keys(cart).length}
                 </Text>
               </View>
             )}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => router.push('/profile/ProfilePage')}
+          >
+            <Ionicons name="person-circle" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -1017,6 +1023,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  profileButton: {
+    padding: 8,
   },
   categoriesContainer: {
     paddingHorizontal: 20,

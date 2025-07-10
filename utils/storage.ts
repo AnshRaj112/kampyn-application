@@ -1,12 +1,23 @@
 // utils/storage.ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+let storage: any;
+if (Platform.OS === 'web') {
+  storage = {
+    getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+    setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+    removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key)),
+  };
+} else {
+  storage = require('@react-native-async-storage/async-storage').default;
+}
 
 const TOKEN_KEY = 'token';
 const EMAIL_KEY = 'user_email';
+const GUEST_CART_KEY = 'guest_cart';
 
 export const saveEmail = async (email: string) => {
   try {
-    await AsyncStorage.setItem(EMAIL_KEY, email);
+    await storage.setItem(EMAIL_KEY, email);
     return true;
   } catch (e) {
     console.error('Error saving email:', e);
@@ -16,7 +27,7 @@ export const saveEmail = async (email: string) => {
 
 export const getEmail = async (): Promise<string | null> => {
   try {
-    return await AsyncStorage.getItem(EMAIL_KEY);
+    return await storage.getItem(EMAIL_KEY);
   } catch (e) {
     console.error('Error getting email:', e);
     return null;
@@ -25,7 +36,7 @@ export const getEmail = async (): Promise<string | null> => {
 
 export const removeEmail = async () => {
   try {
-    await AsyncStorage.removeItem(EMAIL_KEY);
+    await storage.removeItem(EMAIL_KEY);
   } catch (e) {
     console.error('Error removing email:', e);
   }
@@ -33,9 +44,7 @@ export const removeEmail = async () => {
 
 export const saveToken = async (token: string) => {
   try {
-    console.log('Saving token to storage...');
-    await AsyncStorage.setItem(TOKEN_KEY, token);
-    console.log('Token saved successfully');
+    await storage.setItem(TOKEN_KEY, token);
     return true;
   } catch (e) {
     console.error('Error saving token:', e);
@@ -45,10 +54,7 @@ export const saveToken = async (token: string) => {
 
 export const getToken = async (): Promise<string | null> => {
   try {
-    console.log('Getting token from storage...');
-    const token = await AsyncStorage.getItem(TOKEN_KEY);
-    console.log('Retrieved token:', token ? 'Token exists' : 'No token found');
-    return token;
+    return await storage.getItem(TOKEN_KEY);
   } catch (e) {
     console.error('Error getting token:', e);
     return null;
@@ -57,8 +63,25 @@ export const getToken = async (): Promise<string | null> => {
 
 export const removeToken = async () => {
   try {
-    await AsyncStorage.removeItem(TOKEN_KEY);
+    await storage.removeItem(TOKEN_KEY);
   } catch (e) {
     console.error('Error removing token:', e);
+  }
+};
+
+export const getGuestCart = async (): Promise<string> => {
+  try {
+    return await storage.getItem(GUEST_CART_KEY) || "[]";
+  } catch (e) {
+    console.error('Error getting guest cart:', e);
+    return "[]";
+  }
+};
+
+export const saveGuestCart = async (cartData: string) => {
+  try {
+    await storage.setItem(GUEST_CART_KEY, cartData);
+  } catch (e) {
+    console.error('Error saving guest cart:', e);
   }
 };
