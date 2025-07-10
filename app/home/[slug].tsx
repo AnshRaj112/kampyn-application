@@ -719,14 +719,17 @@ export default function CollegePage() {
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemPrice}>₹{item.price}</Text>
+                  <View style={styles.badgeRow}>
                   {item.packable && (
                     <View style={styles.packableBadge}>
                       <Text style={styles.packableText}>Packable</Text>
                     </View>
+                    
                   )}
                   <View style={styles.specialBadge}>
                     <Text style={styles.specialText}>Special</Text>
                   </View>
+                </View>
                 </View>
                 
                 <View style={styles.itemActions}>
@@ -764,69 +767,62 @@ export default function CollegePage() {
       </View>
 
       {/* Favorite Items */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Favorites</Text>
-        {favoriteItems.length > 0 ? (
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-          >
-            {favoriteItems.map((item) => (
-              <View key={item._id} style={styles.itemCard}>
-                {item.image && (
-                  <Image 
-                    source={{ uri: item.image }} 
-                    style={styles.itemImage}
-                    resizeMode="cover"
-                  />
-                )}
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemPrice}>₹{item.price}</Text>
-                  {item.packable && (
-                    <View style={styles.packableBadge}>
-                      <Text style={styles.packableText}>Packable</Text>
-                    </View>
-                  )}
-                  <View style={styles.favoriteBadge}>
-                    <Ionicons name="heart" size={16} color="#ff4757" />
-                  </View>
-                </View>
-                
-                <View style={styles.itemActions}>
-                  {cart[item._id] ? (
-                    <View style={styles.quantityControls}>
-                      <TouchableOpacity 
-                        style={styles.quantityButton}
-                        onPress={() => decreaseQuantity(item)}
-                      >
-                        <Ionicons name="remove" size={20} color="#4ea199" />
-                      </TouchableOpacity>
-                      <Text style={styles.quantityText}>{cart[item._id]}</Text>
-                      <TouchableOpacity 
-                        style={styles.quantityButton}
-                        onPress={() => increaseQuantity(item)}
-                      >
-                        <Ionicons name="add" size={20} color="#4ea199" />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <TouchableOpacity 
-                      style={styles.addButton}
-                      onPress={() => handleAddToCart(item)}
-                    >
-                      <Text style={styles.addButtonText}>Add</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        ) : (
-          <Text style={styles.emptyText}>No favorite items</Text>
-        )}
+      
+  <ScrollView
+  
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  style={styles.horizontalScroll}
+>
+  {favoriteItems.map((item) => (
+    <View key={item._id} style={styles.itemCard}>
+      {item.image && (
+        <Image
+          source={{ uri: item.image }}
+          style={styles.itemImage}
+          resizeMode="cover"
+        />
+      )}
+
+      <View style={styles.itemContent}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemPrice}>₹{item.price}</Text>
+
+        <View style={styles.itemActions}>
+          {cart[item._id] ? (
+            <View style={styles.quantityControls}>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => decreaseQuantity(item)}
+              >
+                <Ionicons name="remove" size={20} color="#4ea199" />
+              </TouchableOpacity>
+              <Text style={styles.quantityText}>{cart[item._id]}</Text>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => increaseQuantity(item)}
+              >
+                <Ionicons name="add" size={20} color="#4ea199" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => handleAddToCart(item)}
+            >
+              <Text style={styles.addButtonText}>Add</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+
+      <View style={styles.favoriteBadge}>
+        <Ionicons name="heart" size={16} color="#ff4757" />
+      </View>
+    </View>
+  ))}
+</ScrollView>
+
 
       {/* All Items by Category */}
       <ScrollView 
@@ -1053,44 +1049,80 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   itemCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 6,
-    borderRadius: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
+    // flexDirection: 'row',
+    // position:'relative',
+    // justifyContent: 'space-between',
+    // alignItems: 'center',
+    // backgroundColor: '#fff',
+    // padding: 16,
+    // marginVertical: 6,
+    // borderRadius: 16,
+    // elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 4,
+    // },
+    // shadowOpacity: 0.12,
+    // shadowRadius: 8,
+    // borderWidth: 1,
+    // borderColor: '#f1f5f9',
+    width: 180,
+  backgroundColor: '#fff',
+  padding: 12,
+  borderRadius: 16,
+  marginRight: 12,
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 8,
+  borderWidth: 1,
+  borderColor: '#f1f5f9',
+  position: 'relative',
+  alignItems: 'center',
   },
   itemImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 12,
-    marginRight: 16,
+    // width: 70,
+    // height: 70,
+    // borderRadius: 12,
+    // marginRight: 16,
+     width: 120,
+  height: 80,
+  borderRadius: 12,
+  marginBottom: 8,
   },
+  
+itemContent: {
+  // flex: 1,
+  // paddingLeft: 4,
+  // justifyContent: 'space-between',
+   width: '100%',
+  alignItems: 'center',
+},
   itemInfo: {
     flex: 1,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 4,
+    // fontSize: 16,
+    // fontWeight: '600',
+    // color: '#1e293b',
+    // marginBottom: 4,
+      fontSize: 14,
+  fontWeight: '600',
+  color: '#1e293b',
+  textAlign: 'center',
+  marginBottom: 4,
   },
   itemPrice: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#4ea199',
-    marginBottom: 4,
+    // fontSize: 18,
+    // fontWeight: '700',
+    // color: '#4ea199',
+    // marginBottom: 4,
+    fontSize: 16,
+  fontWeight: '700',
+  color: '#4ea199',
+  marginBottom: 8,
   },
   packableBadge: {
     backgroundColor: '#10b981',
@@ -1098,21 +1130,26 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 16,
     alignSelf: 'flex-start',
-    marginBottom: 6,
+   // marginBottom: 6,
+   marginTop:7
   },
   packableText: {
     color: '#fff',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
+    
   },
   itemActions: {
-    alignItems: 'center',
+//alignItems: 'center',
+  marginTop: 4,
+  alignItems: 'center',
   },
   addButton: {
+    
     backgroundColor: '#4ea199',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
     borderRadius: 24,
     elevation: 2,
     shadowColor: '#4ea199',
@@ -1122,6 +1159,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    marginTop:30
   },
   addButtonText: {
     color: '#fff',
@@ -1133,23 +1171,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8fafc',
     borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+   paddingHorizontal: 10,
+  paddingVertical: 6,
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
   quantityButton: {
-    padding: 8,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    // padding: 8,
+    // borderRadius: 16,
+    // backgroundColor: '#fff',
+    // elevation: 1,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 1,
+    // },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 2,
+      padding: 6,
+  borderRadius: 16,
+  backgroundColor: '#fff',
+  elevation: 1,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.1,
+  shadowRadius: 2,
+  marginTop:5
   },
   quantityText: {
     fontSize: 16,
@@ -1187,6 +1234,12 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     paddingLeft: 5,
   },
+  badgeRow: {
+  flexDirection: 'row',
+  gap: 6,
+  marginBottom: 6,
+},
+
   specialBadge: {
     backgroundColor: '#ff6b6b',
     paddingHorizontal: 10,
@@ -1202,21 +1255,47 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   favoriteBadge: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginTop: 6,
-    borderWidth: 2,
-    borderColor: '#ff4757',
-    elevation: 1,
-    shadowColor: '#ff4757',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+  // //   backgroundColor: '#fff',
+  // //   paddingHorizontal: 12,
+  // //   paddingVertical: 6,
+  // //  // borderRadius: 16,
+  // //   marginTop: 1,
+  // //  // borderWidth: 2,
+  // //   //borderColor: '#ff4757',
+  // //  // elevation: 1,
+  // //   // shadowColor: '#ff4757',
+  // //   // shadowOffset: {
+  // //   //   width: 0,
+  // //   //   height: 1,
+  // //   // },
+  // //   // shadowOpacity: 0.2,
+  // //   // shadowRadius: 2,
+  // //   position:'absolute'
+  //  position: 'absolute',
+  // top: 8,
+  // right: 8,
+  // backgroundColor: '#fff',
+  // borderRadius: 16,
+  // padding: 6,
+  // zIndex: 10,
+  // // Optional shadow for elevation (iOS & Android)
+  // shadowColor: '#000',
+  // shadowOffset: { width: 0, height: 1 },
+  // shadowOpacity: 0.1,
+  // shadowRadius: 2,
+  // elevation: 3,
+   position: 'absolute',
+  top: 8,
+  right: 8,
+  backgroundColor: '#fff',
+  borderRadius: 16,
+  padding: 6,
+  zIndex: 10,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.1,
+  shadowRadius: 2,
+  elevation: 3,
   },
   content: {
     alignItems: 'center',
@@ -1253,4 +1332,5 @@ const styles = StyleSheet.create({
     color: '#4ea199',
     fontWeight: '600',
   },
-}); 
+  
+});  

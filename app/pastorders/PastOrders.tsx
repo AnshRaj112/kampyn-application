@@ -420,8 +420,8 @@ return (
           keyExtractor={(item) => item._id}
           renderItem={({ item: order }) => (
             <View style={styles.card}>
-              <View style={styles.cardTopRow}>
-                <View style={styles.imagePlaceholder} />
+              {/* <View style={styles.cardTopRow}>
+             
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.vendorName}>{order.vendorId?.fullName || 'Vendor'}</Text>
                   <Text style={styles.price}>₹{order.total?.toFixed(2)}</Text>
@@ -430,7 +430,29 @@ return (
                   </Text>
                 </View>
                 <Text style={styles.orderId}>#{order.orderNumber?.slice(-6)}</Text>
-              </View>
+              </View> */}
+              <View style={styles.cardTopRow}>
+  <View style={{ flex: 1, marginLeft: 12 }}>
+    <Text style={styles.vendorName}>{order.vendorId?.fullName || 'Vendor'}</Text>
+    <Text style={styles.price}>₹{order.total?.toFixed(2)}</Text>
+    <Text style={styles.meta}>
+      {formatDate(order.createdAt)} • {order.items.length} Item{order.items.length > 1 ? 's' : ''}
+    </Text>
+    <Text
+      style={[
+        styles.statusLabel,
+        {
+          color: order.status === 'Cancelled' ? 'red' : '#10b981',
+          marginTop: 4, // add a little space below meta
+        },
+      ]}
+    >
+      {order.status?.toUpperCase()}
+    </Text>
+  </View>
+  <Text style={styles.orderId}>#{order.orderNumber?.slice(-6)}</Text>
+</View>
+
 
               <View style={styles.buttonRow}>
                 <Text
@@ -441,7 +463,7 @@ return (
                     },
                   ]}
                 >
-                  {order.status}
+                  {order.status?.toUpperCase()}
                 </Text>
 
                 {/* <View style={styles.actions}>
@@ -590,10 +612,12 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 13,
     fontWeight: '600',
+    marginRight:10
   },
   actions: {
     flexDirection: 'row',
     gap: 8,
+    textTransform:'uppercase'
   },
   rateButton: {
     paddingHorizontal: 14,
