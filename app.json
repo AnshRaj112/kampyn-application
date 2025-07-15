@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.fatedeath.kiitbitesapplication"
+      "package": "https://bitesbay-backend.onrender.com"
     },
     "web": {
       "bundler": "metro",
