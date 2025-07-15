@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ActivityIndicator, 
-  TouchableOpacity, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  ScrollView,
   Image,
   Alert,
-  RefreshControl
+  RefreshControl,
+  FlatList
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -68,9 +69,9 @@ export default function CollegePage() {
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [specialItems, setSpecialItems] = useState<Item[]>([]);
   const [favoriteItems, setFavoriteItems] = useState<Item[]>([]);
-  const [cart, setCart] = useState<{[key: string]: number}>({});
+  const [cart, setCart] = useState<{ [key: string]: number }>({});
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Vendor modal state
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [availableVendors, setAvailableVendors] = useState<Vendor[]>([]);
@@ -89,13 +90,13 @@ export default function CollegePage() {
         const storedCollegeName = await AsyncStorage.getItem('currentCollegeName');
         const storedCollegeId = await AsyncStorage.getItem('currentCollegeId');
         const storedUserId = await AsyncStorage.getItem('userId');
-        
-        console.log('Stored data:', { 
-          collegeName: storedCollegeName, 
-          collegeId: storedCollegeId, 
-          userId: storedUserId 
+
+        console.log('Stored data:', {
+          collegeName: storedCollegeName,
+          collegeId: storedCollegeId,
+          userId: storedUserId
         });
-        
+
         setCollegeName(storedCollegeName || 'Your College');
         setCollegeId(storedCollegeId || '');
         setUserId(storedUserId || '');
@@ -135,10 +136,10 @@ export default function CollegePage() {
         const userData = await response.json();
         console.log('User data fetched:', userData);
         setUserId(userData._id);
-        
+
         // Save userId to storage for future use
         await AsyncStorage.setItem('userId', userData._id);
-        
+
         // Now fetch favorites since we have the userId
         if (collegeId) {
           await fetchFavoriteItems(collegeId);
@@ -163,15 +164,15 @@ export default function CollegePage() {
 
   const fetchAllItems = async (uniId: string) => {
     try {
-              // Fetch all retail and produce items for the university (like frontend)
-        const [retailRes, produceRes] = await Promise.all([
-          fetch(`${config.backendUrl}/api/item/retail/uni/${uniId}?limit=1000`),
-          fetch(`${config.backendUrl}/api/item/produce/uni/${uniId}?limit=1000`),
-        ]);
-      
+      // Fetch all retail and produce items for the university (like frontend)
+      const [retailRes, produceRes] = await Promise.all([
+        fetch(`${config.backendUrl}/api/item/retail/uni/${uniId}?limit=1000`),
+        fetch(`${config.backendUrl}/api/item/produce/uni/${uniId}?limit=1000`),
+      ]);
+
       const retailData = await retailRes.json();
       const produceData = await produceRes.json();
-      
+
       if (!retailRes.ok) {
         console.error('Retail API error:', retailRes.status, retailData);
         throw new Error(`Failed to fetch retail items: ${retailRes.status}`);
@@ -180,7 +181,7 @@ export default function CollegePage() {
         console.error('Produce API error:', produceRes.status, produceData);
         throw new Error(`Failed to fetch produce items: ${produceRes.status}`);
       }
-      
+
       const retailItems: Item[] = (retailData.items || []).map((item: any) => ({
         _id: item._id,
         name: item.name,
@@ -193,7 +194,7 @@ export default function CollegePage() {
         vendorId: item.vendorId,
         quantity: item.quantity,
       }));
-      
+
       const produceItems: Item[] = (produceData.items || []).map((item: any) => ({
         _id: item._id,
         name: item.name,
@@ -217,7 +218,7 @@ export default function CollegePage() {
 
       setItems(groupedItems);
       setAllItems([...retailItems, ...produceItems]);
-      
+
       console.log('Fetched items:', {
         retailItems: retailItems.length,
         produceItems: produceItems.length,
@@ -226,7 +227,7 @@ export default function CollegePage() {
         retailData: retailData,
         produceData: produceData
       });
-      
+
       // Set categories for display
       const retailCategories = retailItems.reduce((acc: Category[], item) => {
         if (!acc.find(cat => cat.type === item.type)) {
@@ -238,7 +239,7 @@ export default function CollegePage() {
         }
         return acc;
       }, []);
-      
+
       const produceCategories = produceItems.reduce((acc: Category[], item) => {
         if (!acc.find(cat => cat.type === item.type)) {
           acc.push({
@@ -249,9 +250,9 @@ export default function CollegePage() {
         }
         return acc;
       }, []);
-      
+
       setCategories([...retailCategories, ...produceCategories]);
-      
+
       // Fetch special items
       await fetchSpecialItems(uniId, [], []); // Pass empty arrays since fetchSpecialItems now fetches its own data
     } catch (error) {
@@ -267,29 +268,29 @@ export default function CollegePage() {
         fetch(`${config.backendUrl}/api/item/retail/uni/${uniId}?limit=1000`),
         fetch(`${config.backendUrl}/api/item/produce/uni/${uniId}?limit=1000`),
       ]);
-      
+
       const vendors = await vendorsRes.json();
       const retailData = await retailRes.json();
       const produceData = await produceRes.json();
-      
+
       if (!vendorsRes.ok || !retailRes.ok || !produceRes.ok) {
         throw new Error("Failed to fetch vendor or item data");
       }
-      
+
       // Create lookup maps for items
       const retailItemsMap = new Map<string, any>();
       const produceItemsMap = new Map<string, any>();
-      
+
       (retailData.items || []).forEach((item: any) => {
         retailItemsMap.set(item._id, item);
       });
-      
+
       (produceData.items || []).forEach((item: any) => {
         produceItemsMap.set(item._id, item);
       });
-      
+
       const specials: Item[] = [];
-      
+
       vendors.forEach((vendor: any) => {
         // Process retail inventory
         (vendor.retailInventory || []).forEach((entry: any) => {
@@ -311,7 +312,7 @@ export default function CollegePage() {
             }
           }
         });
-        
+
         // Process produce inventory
         (vendor.produceInventory || []).forEach((entry: any) => {
           if (entry.isSpecial && entry.isSpecial === 'Y') {
@@ -333,7 +334,7 @@ export default function CollegePage() {
           }
         });
       });
-      
+
       setSpecialItems(specials);
       console.log('Fetched special items:', {
         count: specials.length,
@@ -350,16 +351,16 @@ export default function CollegePage() {
   const fetchFavoriteItems = async (uniId: string) => {
     console.log('=== fetchFavoriteItems called ===');
     console.log('Parameters:', { uniId });
-    
+
     // Get current userId from state or storage
     const currentUserId = userId || await AsyncStorage.getItem('userId');
     console.log('Current userId:', currentUserId);
-    
+
     if (!currentUserId) {
       console.log('❌ Skipping favorites fetch - no userId available');
       return;
     }
-    
+
     try {
       const token = await getToken();
       const response = await fetch(`${config.backendUrl}/fav/${currentUserId}/${uniId}`, {
@@ -383,7 +384,7 @@ export default function CollegePage() {
           isSpecial: fav.isSpecial,
           vendorId: fav.vendorId
         })) || [];
-        
+
         setFavoriteItems(favorites);
         console.log('Fetched favorite items:', favorites.length, favorites);
       } else {
@@ -397,7 +398,7 @@ export default function CollegePage() {
   const fetchCart = async () => {
     const currentUserId = userId || await AsyncStorage.getItem('userId');
     if (!currentUserId) return;
-    
+
     try {
       const token = await getToken();
       const response = await fetch(`${config.backendUrl}/cart/${currentUserId}`, {
@@ -405,11 +406,11 @@ export default function CollegePage() {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const cartData = await response.json();
         console.log('Cart data received:', cartData);
-        const cartMap: {[key: string]: number} = {};
+        const cartMap: { [key: string]: number } = {};
         cartData.cart?.forEach((item: any) => {
           cartMap[item.itemId] = item.quantity;
         });
@@ -435,11 +436,11 @@ export default function CollegePage() {
       }
 
       const vendors = await response.json();
-      
+
       // Filter available vendors based on item type
       const availableVendors = vendors.filter((vendor: Vendor) => {
         if (!vendor.inventoryValue) return false;
-        
+
         if (item.category === 'retail') {
           return vendor.inventoryValue.quantity && vendor.inventoryValue.quantity > 0;
         } else {
@@ -463,7 +464,7 @@ export default function CollegePage() {
 
     try {
       const vendors = await checkItemAvailability(item);
-      
+
       if (vendors.length === 0) {
         Alert.alert('Not Available', 'No vendors have this item available');
         return;
@@ -567,9 +568,9 @@ export default function CollegePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          itemId: item._id, 
-          kind: item.category === 'retail' ? 'Retail' : 'Produce' 
+        body: JSON.stringify({
+          itemId: item._id,
+          kind: item.category === 'retail' ? 'Retail' : 'Produce'
         })
       });
 
@@ -594,9 +595,9 @@ export default function CollegePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          itemId: item._id, 
-          kind: item.category === 'retail' ? 'Retail' : 'Produce' 
+        body: JSON.stringify({
+          itemId: item._id,
+          kind: item.category === 'retail' ? 'Retail' : 'Produce'
         })
       });
 
@@ -656,7 +657,7 @@ export default function CollegePage() {
         <Text style={styles.title}>Welcome to {collegeName}</Text>
         <View style={styles.content}>
           <Text style={styles.subtitle}>Please sign up to continue</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.button}
             onPress={() => router.push({
               pathname: '/signup/SignupForm',
@@ -671,18 +672,19 @@ export default function CollegePage() {
   }
 
   return (
+    <ScrollView>
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>{collegeName}</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.searchButton}
             onPress={() => router.push('/search/Search')}
           >
             <Ionicons name="search" size={24} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.cartButton}
             onPress={() => router.push('/cart')}
           >
@@ -695,7 +697,7 @@ export default function CollegePage() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.profileButton}
             onPress={() => router.push('/profile/ProfilePage')}
           >
@@ -704,20 +706,20 @@ export default function CollegePage() {
         </View>
       </View>
 
-            {/* Special Offers Section */}
+      {/* Special Offers Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Special Offers</Text>
         {specialItems.length > 0 ? (
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.horizontalScroll}
           >
             {specialItems.map((item) => (
               <View key={item._id} style={styles.itemCard}>
                 {item.image && (
-                  <Image 
-                    source={{ uri: item.image }} 
+                  <Image
+                    source={{ uri: item.image }}
                     style={styles.itemImage}
                     resizeMode="cover"
                   />
@@ -726,29 +728,29 @@ export default function CollegePage() {
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemPrice}>₹{item.price}</Text>
                   <View style={styles.badgeRow}>
-                  {item.packable && (
-                    <View style={styles.packableBadge}>
-                      <Text style={styles.packableText}>Packable</Text>
+                    {item.packable && (
+                      <View style={styles.packableBadge}>
+                        <Text style={styles.packableText}>Packable</Text>
+                      </View>
+
+                    )}
+                    <View style={styles.specialBadge}>
+                      <Text style={styles.specialText}>Special</Text>
                     </View>
-                    
-                  )}
-                  <View style={styles.specialBadge}>
-                    <Text style={styles.specialText}>Special</Text>
                   </View>
                 </View>
-                </View>
-                
+
                 <View style={styles.itemActions}>
                   {cart[item._id] ? (
                     <View style={styles.quantityControls}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => decreaseQuantity(item)}
                       >
                         <Ionicons name="remove" size={20} color="#4ea199" />
                       </TouchableOpacity>
                       <Text style={styles.quantityText}>{cart[item._id]}</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => increaseQuantity(item)}
                       >
@@ -756,7 +758,7 @@ export default function CollegePage() {
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.addButton}
                       onPress={() => handleAddToCart(item)}
                     >
@@ -773,65 +775,68 @@ export default function CollegePage() {
       </View>
 
       {/* Favorite Items */}
-      
-  <ScrollView
-  
-  horizontal
-  showsHorizontalScrollIndicator={false}
-  style={styles.horizontalScroll}
->
-  {favoriteItems.map((item) => (
-    <View key={item._id} style={styles.itemCard}>
-      {item.image && (
-        <Image
-          source={{ uri: item.image }}
-          style={styles.itemImage}
-          resizeMode="cover"
-        />
-      )}
+       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Favourites</Text>
 
-      <View style={styles.itemContent}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemPrice}>₹{item.price}</Text>
+      <ScrollView
 
-        <View style={styles.itemActions}>
-          {cart[item._id] ? (
-            <View style={styles.quantityControls}>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => decreaseQuantity(item)}
-              >
-                <Ionicons name="remove" size={20} color="#4ea199" />
-              </TouchableOpacity>
-              <Text style={styles.quantityText}>{cart[item._id]}</Text>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => increaseQuantity(item)}
-              >
-                <Ionicons name="add" size={20} color="#4ea199" />
-              </TouchableOpacity>
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.horizontalScroll}
+      >
+        {favoriteItems.map((item) => (
+          <View key={item._id} style={styles.itemCard}>
+            {item.image && (
+              <Image
+                source={{ uri: item.image }}
+                style={styles.itemImage}
+                resizeMode="cover"
+              />
+            )}
+
+            <View style={styles.itemContent}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemPrice}>₹{item.price}</Text>
             </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => handleAddToCart(item)}
-            >
-              <Text style={styles.addButtonText}>Add</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+            <View style={styles.itemActions}>
+              {cart[item._id] ? (
+                <View style={styles.quantityControls}>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => decreaseQuantity(item)}
+                  >
+                    <Ionicons name="remove" size={20} color="#4ea199" />
+                  </TouchableOpacity>
+                  <Text style={styles.quantityText}>{cart[item._id]}</Text>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => increaseQuantity(item)}
+                  >
+                    <Ionicons name="add" size={20} color="#4ea199" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => handleAddToCart(item)}
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
-      <View style={styles.favoriteBadge}>
-        <Ionicons name="heart" size={16} color="#ff4757" />
+
+            <View style={styles.favoriteBadge}>
+              <Ionicons name="heart" size={16} color="#ff4757" />
+            </View>
+          </View>
+        ))}
+      </ScrollView>
       </View>
-    </View>
-  ))}
-</ScrollView>
 
 
       {/* All Items by Category */}
-      <ScrollView 
+      {/* <ScrollView
         style={styles.itemsContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -845,8 +850,8 @@ export default function CollegePage() {
             {categoryItems.map((item) => (
               <View key={item._id} style={styles.itemCard}>
                 {item.image && (
-                  <Image 
-                    source={{ uri: item.image }} 
+                  <Image
+                    source={{ uri: item.image }}
                     style={styles.itemImage}
                     resizeMode="cover"
                   />
@@ -860,18 +865,18 @@ export default function CollegePage() {
                     </View>
                   )}
                 </View>
-                
+
                 <View style={styles.itemActions}>
                   {cart[item._id] ? (
                     <View style={styles.quantityControls}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => decreaseQuantity(item)}
                       >
                         <Ionicons name="remove" size={20} color="#4ea199" />
                       </TouchableOpacity>
                       <Text style={styles.quantityText}>{cart[item._id]}</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => increaseQuantity(item)}
                       >
@@ -879,7 +884,7 @@ export default function CollegePage() {
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.addButton}
                       onPress={() => handleAddToCart(item)}
                     >
@@ -891,15 +896,15 @@ export default function CollegePage() {
             ))}
           </View>
         ))}
-        
+
         {Object.keys(items).length === 0 && allItems.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>All Items</Text>
             {allItems.map((item) => (
               <View key={item._id} style={styles.itemCard}>
                 {item.image && (
-                  <Image 
-                    source={{ uri: item.image }} 
+                  <Image
+                    source={{ uri: item.image }}
                     style={styles.itemImage}
                     resizeMode="cover"
                   />
@@ -913,18 +918,18 @@ export default function CollegePage() {
                     </View>
                   )}
                 </View>
-                
+
                 <View style={styles.itemActions}>
                   {cart[item._id] ? (
                     <View style={styles.quantityControls}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => decreaseQuantity(item)}
                       >
                         <Ionicons name="remove" size={20} color="#4ea199" />
                       </TouchableOpacity>
                       <Text style={styles.quantityText}>{cart[item._id]}</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => increaseQuantity(item)}
                       >
@@ -932,7 +937,7 @@ export default function CollegePage() {
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.addButton}
                       onPress={() => handleAddToCart(item)}
                     >
@@ -944,13 +949,154 @@ export default function CollegePage() {
             ))}
           </View>
         )}
-        
+
         {Object.keys(items).length === 0 && allItems.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No items available</Text>
           </View>
         )}
-      </ScrollView>
+      </ScrollView> */}
+
+
+      <ScrollView
+  style={styles.itemsContainer}
+  refreshControl={
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+  }
+>
+  {Object.entries(items).map(([categoryKey, categoryItems]) => (
+    <View key={categoryKey} style={styles.section}>
+      <Text style={styles.sectionTitle}>
+        {categoryKey
+          .split('-')[1]
+          .replace(/-/g, ' ')
+          .replace(/\b\w/g, (l) => l.toUpperCase())}
+      </Text>
+
+      <FlatList
+        data={categoryItems}
+        keyExtractor={(item) => item._id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScroll}
+        renderItem={({ item }) => (
+          <View style={styles.itemCard}>
+            {item.image && (
+              <Image
+                source={{ uri: item.image }}
+                style={styles.itemImage}
+                resizeMode="cover"
+              />
+            )}
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemPrice}>₹{item.price}</Text>
+              {item.packable && (
+                <View style={styles.packableBadge}>
+                  <Text style={styles.packableText}>Packable</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.itemActions}>
+              {cart[item._id] ? (
+                <View style={styles.quantityControls}>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => decreaseQuantity(item)}
+                  >
+                    <Ionicons name="remove" size={20} color="#4ea199" />
+                  </TouchableOpacity>
+                  <Text style={styles.quantityText}>{cart[item._id]}</Text>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => increaseQuantity(item)}
+                  >
+                    <Ionicons name="add" size={20} color="#4ea199" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => handleAddToCart(item)}
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      />
+    </View>
+  ))}
+
+  {Object.keys(items).length === 0 && allItems.length > 0 && (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>All Items</Text>
+      <FlatList
+        data={allItems}
+        keyExtractor={(item) => item._id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
+        renderItem={({ item }) => (
+          <View style={styles.itemCard}>
+            {item.image && (
+              <Image
+                source={{ uri: item.image }}
+                style={styles.itemImage}
+                resizeMode="cover"
+              />
+            )}
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemPrice}>₹{item.price}</Text>
+              {item.packable && (
+                <View style={styles.packableBadge}>
+                  <Text style={styles.packableText}>Packable</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.itemActions}>
+              {cart[item._id] ? (
+                <View style={styles.quantityControls}>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => decreaseQuantity(item)}
+                  >
+                    <Ionicons name="remove" size={20} color="#4ea199" />
+                  </TouchableOpacity>
+                  <Text style={styles.quantityText}>{cart[item._id]}</Text>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => increaseQuantity(item)}
+                  >
+                    <Ionicons name="add" size={20} color="#4ea199" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => handleAddToCart(item)}
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      />
+    </View>
+  )}
+
+  {Object.keys(items).length === 0 && allItems.length === 0 && (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyText}>No items available</Text>
+    </View>
+  )}
+</ScrollView>
+
 
       {/* Vendor Modal */}
       <VendorModal
@@ -963,6 +1109,7 @@ export default function CollegePage() {
         itemName={selectedItem?.name || ''}
       />
     </View>
+    </ScrollView>
   );
 }
 
@@ -991,10 +1138,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    // fontSize: 24,
+    // fontWeight: '700',
+    // color: '#fff',
+    // flex: 1,
+    fontSize: 26,
+    fontWeight: '800',
     color: '#fff',
     flex: 1,
+    letterSpacing: 1.5,
+    fontFamily: 'serif', // Optional: can also use custom loaded fonts
+    textShadowColor: '#064e3b',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   headerActions: {
     flexDirection: 'row',
@@ -1055,7 +1211,7 @@ const styles = StyleSheet.create({
   },
   itemsContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 5,
   },
   itemCard: {
     // flexDirection: 'row',
@@ -1076,39 +1232,40 @@ const styles = StyleSheet.create({
     // shadowRadius: 8,
     // borderWidth: 1,
     // borderColor: '#f1f5f9',
-    width: 180,
-  backgroundColor: '#fff',
-  padding: 12,
-  borderRadius: 16,
-  marginRight: 12,
-  elevation: 3,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.12,
-  shadowRadius: 8,
-  borderWidth: 1,
-  borderColor: '#f1f5f9',
-  position: 'relative',
-  alignItems: 'center',
+    width: 150,
+    height:230,
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 16,
+    marginRight: 10,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    position: 'relative',
+    alignItems: 'center',
   },
   itemImage: {
     // width: 70,
     // height: 70,
     // borderRadius: 12,
     // marginRight: 16,
-     width: 120,
-  height: 80,
-  borderRadius: 12,
-  marginBottom: 8,
+    width: 120,
+    height: 80,
+    borderRadius: 12,
+    marginBottom: 8,
   },
-  
-itemContent: {
-  // flex: 1,
-  // paddingLeft: 4,
-  // justifyContent: 'space-between',
-   width: '100%',
-  alignItems: 'center',
-},
+
+  itemContent: {
+    // flex: 1,
+    // paddingLeft: 4,
+    // justifyContent: 'space-between',
+    width: '100%',
+    alignItems: 'center',
+  },
   itemInfo: {
     flex: 1,
   },
@@ -1117,11 +1274,11 @@ itemContent: {
     // fontWeight: '600',
     // color: '#1e293b',
     // marginBottom: 4,
-      fontSize: 14,
-  fontWeight: '600',
-  color: '#1e293b',
-  textAlign: 'center',
-  marginBottom: 4,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+    textAlign: 'center',
+    marginBottom: 4,
   },
   itemPrice: {
     // fontSize: 18,
@@ -1129,9 +1286,9 @@ itemContent: {
     // color: '#4ea199',
     // marginBottom: 4,
     fontSize: 16,
-  fontWeight: '700',
-  color: '#4ea199',
-  marginBottom: 8,
+    fontWeight: '700',
+    color: '#4ea199',
+    marginBottom: 8,
   },
   packableBadge: {
     backgroundColor: '#10b981',
@@ -1139,23 +1296,35 @@ itemContent: {
     paddingVertical: 4,
     borderRadius: 16,
     alignSelf: 'flex-start',
-   // marginBottom: 6,
-   marginTop:7
+    // marginBottom: 6,
+    marginTop: 7
   },
+  badgeOverlay: {
+  position: 'absolute',
+  top: 8,
+  left: 8,
+  flexDirection: 'column',
+  gap: 4,
+},
+
   packableText: {
     color: '#fff',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
-    
+
   },
   itemActions: {
-//alignItems: 'center',
-  marginTop: 4,
-  alignItems: 'center',
+    //alignItems: 'center',
+    marginTop: 4,
+    alignItems: 'center',
   },
+  horizontalList: {
+  paddingHorizontal: 10,
+  gap: 10, // You can also use marginRight in itemCard instead
+},
   addButton: {
-    
+
     backgroundColor: '#4ea199',
     paddingHorizontal: 20,
     paddingVertical: 8,
@@ -1168,7 +1337,7 @@ itemContent: {
     },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    marginTop:30
+    marginTop: 5
   },
   addButtonText: {
     color: '#fff',
@@ -1180,10 +1349,11 @@ itemContent: {
     alignItems: 'center',
     backgroundColor: '#f8fafc',
     borderRadius: 24,
-   paddingHorizontal: 10,
-  paddingVertical: 6,
+    paddingHorizontal: 2,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    marginTop:10
   },
   quantityButton: {
     // padding: 8,
@@ -1197,15 +1367,15 @@ itemContent: {
     // },
     // shadowOpacity: 0.1,
     // shadowRadius: 2,
-      padding: 6,
-  borderRadius: 16,
-  backgroundColor: '#fff',
-  elevation: 1,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.1,
-  shadowRadius: 2,
-  marginTop:5
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    marginTop: 5
   },
   quantityText: {
     fontSize: 16,
@@ -1238,16 +1408,17 @@ itemContent: {
     color: '#1e293b',
     marginBottom: 16,
     letterSpacing: -0.5,
+    marginTop: 10
   },
   horizontalScroll: {
     paddingBottom: 15,
     paddingLeft: 5,
   },
   badgeRow: {
-  flexDirection: 'row',
-  gap: 6,
-  marginBottom: 6,
-},
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 6,
+  },
 
   specialBadge: {
     backgroundColor: '#ff6b6b',
@@ -1256,6 +1427,7 @@ itemContent: {
     borderRadius: 16,
     alignSelf: 'flex-start',
     marginTop: 6,
+    marginLeft: 6,
   },
   specialText: {
     color: '#fff',
@@ -1264,47 +1436,47 @@ itemContent: {
     letterSpacing: 0.5,
   },
   favoriteBadge: {
-  // //   backgroundColor: '#fff',
-  // //   paddingHorizontal: 12,
-  // //   paddingVertical: 6,
-  // //  // borderRadius: 16,
-  // //   marginTop: 1,
-  // //  // borderWidth: 2,
-  // //   //borderColor: '#ff4757',
-  // //  // elevation: 1,
-  // //   // shadowColor: '#ff4757',
-  // //   // shadowOffset: {
-  // //   //   width: 0,
-  // //   //   height: 1,
-  // //   // },
-  // //   // shadowOpacity: 0.2,
-  // //   // shadowRadius: 2,
-  // //   position:'absolute'
-  //  position: 'absolute',
-  // top: 8,
-  // right: 8,
-  // backgroundColor: '#fff',
-  // borderRadius: 16,
-  // padding: 6,
-  // zIndex: 10,
-  // // Optional shadow for elevation (iOS & Android)
-  // shadowColor: '#000',
-  // shadowOffset: { width: 0, height: 1 },
-  // shadowOpacity: 0.1,
-  // shadowRadius: 2,
-  // elevation: 3,
-   position: 'absolute',
-  top: 8,
-  right: 8,
-  backgroundColor: '#fff',
-  borderRadius: 16,
-  padding: 6,
-  zIndex: 10,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.1,
-  shadowRadius: 2,
-  elevation: 3,
+    // //   backgroundColor: '#fff',
+    // //   paddingHorizontal: 12,
+    // //   paddingVertical: 6,
+    // //  // borderRadius: 16,
+    // //   marginTop: 1,
+    // //  // borderWidth: 2,
+    // //   //borderColor: '#ff4757',
+    // //  // elevation: 1,
+    // //   // shadowColor: '#ff4757',
+    // //   // shadowOffset: {
+    // //   //   width: 0,
+    // //   //   height: 1,
+    // //   // },
+    // //   // shadowOpacity: 0.2,
+    // //   // shadowRadius: 2,
+    // //   position:'absolute'
+    //  position: 'absolute',
+    // top: 8,
+    // right: 8,
+    // backgroundColor: '#fff',
+    // borderRadius: 16,
+    // padding: 6,
+    // zIndex: 10,
+    // // Optional shadow for elevation (iOS & Android)
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 2,
+    // elevation: 3,
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 6,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 3,
   },
   content: {
     alignItems: 'center',
@@ -1341,5 +1513,5 @@ itemContent: {
     color: '#4ea199',
     fontWeight: '600',
   },
-  
+
 });  
