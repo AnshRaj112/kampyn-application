@@ -1016,7 +1016,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           {/* Estimated Preparation Time */}
           {vendorDeliverySettings && (
             <View style={styles.preparationTime}>
-              <Text style={styles.preparationTimeText}>⏱️ Estimated preparation time</Text>
+              <Text style={styles.preparationTimeText}>⏱️ Estimated preparation time: </Text>
               <Text style={styles.preparationTimeText}>{vendorDeliverySettings.deliveryPreparationTime} minutes</Text>
             </View>
           )}
@@ -1347,7 +1347,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   preparationTimeText: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#856404",
   },
   divider: {

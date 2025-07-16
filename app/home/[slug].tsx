@@ -645,8 +645,10 @@ export default function CollegePage() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#4ea199" />
+        {/* <ActivityIndicator size="large" color="#4ea199" /> */}
+       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading {collegeName}...</Text>
+      </View>
       </View>
     );
   }
@@ -686,7 +688,7 @@ export default function CollegePage() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.cartButton}
-            onPress={() => router.push('/cart')}
+            onPress={() => router.push('/cart/Cart')}
           >
             <Ionicons name="cart" size={24} color="#fff" />
             {Object.keys(cart).length > 0 && (
@@ -706,7 +708,9 @@ export default function CollegePage() {
         </View>
       </View>
 
-      {/* Special Offers Section */}
+
+{/* special offers */}
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Special Offers</Text>
         {specialItems.length > 0 ? (
@@ -717,6 +721,15 @@ export default function CollegePage() {
           >
             {specialItems.map((item) => (
               <View key={item._id} style={styles.itemCard}>
+                 <View style={styles.imageWrapper}>
+            {/* {item.packable && (
+              <View style={[styles.ribbon, styles.topLeft]}>
+                <Text style={styles.ribbonText}>Packable</Text>
+              </View>
+            )} */}
+            <View style={[styles.ribbon, styles.topRight]}>
+              <Text style={styles.ribbonText}>Special</Text>
+            </View>
                 {item.image && (
                   <Image
                     source={{ uri: item.image }}
@@ -724,11 +737,12 @@ export default function CollegePage() {
                     resizeMode="cover"
                   />
                 )}
+                </View>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemPrice}>₹{item.price}</Text>
-                  <View style={styles.badgeRow}>
-                    {item.packable && (
+                  {/* <View style={styles.badgeRow}> */}
+                    {/* {item.packable && (
                       <View style={styles.packableBadge}>
                         <Text style={styles.packableText}>Packable</Text>
                       </View>
@@ -736,9 +750,20 @@ export default function CollegePage() {
                     )}
                     <View style={styles.specialBadge}>
                       <Text style={styles.specialText}>Special</Text>
-                    </View>
+                    </View> */}
+
+                    {/* {item.packable && (
+  <View style={[styles.ribbon, styles.topLeft]}>
+    <Text style={styles.ribbonText}>Packable</Text>
+  </View>
+)}
+
+<View style={[styles.ribbon, styles.topRight]}>
+  <Text style={styles.ribbonText}>Special</Text>
+</View> */}
+
                   </View>
-                </View>
+                {/* </View> */}
 
                 <View style={styles.itemActions}>
                   {cart[item._id] ? (
@@ -786,6 +811,7 @@ export default function CollegePage() {
       >
         {favoriteItems.map((item) => (
           <View key={item._id} style={styles.itemCard}>
+              <View style={styles.imageWrapper}>
             {item.image && (
               <Image
                 source={{ uri: item.image }}
@@ -793,9 +819,10 @@ export default function CollegePage() {
                 resizeMode="cover"
               />
             )}
-
-            <View style={styles.itemContent}>
-              <Text style={styles.itemName}>{item.name}</Text>
+            </View>
+ <View style={styles.itemInfo}>
+            {/* <View style={styles.itemContent}> */}
+              <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
               <Text style={styles.itemPrice}>₹{item.price}</Text>
             </View>
             <View style={styles.itemActions}>
@@ -981,6 +1008,12 @@ export default function CollegePage() {
         contentContainerStyle={styles.horizontalScroll}
         renderItem={({ item }) => (
           <View style={styles.itemCard}>
+             <View style={styles.imageWrapper}>
+      {item.packable && (
+        <View style={[styles.ribbon, styles.top]}>
+          <Text style={styles.ribbonText}>Packable</Text>
+        </View>
+      )}
             {item.image && (
               <Image
                 source={{ uri: item.image }}
@@ -988,14 +1021,15 @@ export default function CollegePage() {
                 resizeMode="cover"
               />
             )}
+            </View>
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>{item.name}</Text>
               <Text style={styles.itemPrice}>₹{item.price}</Text>
-              {item.packable && (
+              {/* {item.packable && (
                 <View style={styles.packableBadge}>
                   <Text style={styles.packableText}>Packable</Text>
                 </View>
-              )}
+              )} */}
             </View>
 
             <View style={styles.itemActions}>
@@ -1041,21 +1075,36 @@ export default function CollegePage() {
         contentContainerStyle={styles.horizontalList}
         renderItem={({ item }) => (
           <View style={styles.itemCard}>
-            {item.image && (
+            <View style={styles.imageWrapper}>
+  {item.packable && (
+    <View style={[styles.ribbon, styles.top]}>
+      <Text style={styles.ribbonText}>Packable</Text>
+    </View>
+  )}
+  {item.image && (
+    <Image
+      source={{ uri: item.image }}
+      style={styles.itemImage}
+      resizeMode="cover"
+    />
+  )}
+</View>
+            
+            {/* {item.image && (
               <Image
                 source={{ uri: item.image }}
                 style={styles.itemImage}
                 resizeMode="cover"
               />
-            )}
+            )} */}
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>{item.name}</Text>
               <Text style={styles.itemPrice}>₹{item.price}</Text>
-              {item.packable && (
+              {/* {item.packable && (
                 <View style={styles.packableBadge}>
                   <Text style={styles.packableText}>Packable</Text>
                 </View>
-              )}
+              )} */}
             </View>
 
             <View style={styles.itemActions}>
@@ -1147,7 +1196,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     flex: 1,
     letterSpacing: 1.5,
-    fontFamily: 'serif', // Optional: can also use custom loaded fonts
+    fontFamily: 'serif', 
     textShadowColor: '#064e3b',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
@@ -1201,6 +1250,47 @@ const styles = StyleSheet.create({
     backgroundColor: '#4ea199',
     borderColor: '#4ea199',
   },
+
+
+imageWrapper: {
+  position: 'relative',
+  width: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+ribbon: {
+  position: 'absolute',
+  paddingVertical: 2,
+  paddingHorizontal: 3,
+  transform: [{ rotate: '-45deg' }],
+  zIndex: 10,
+  elevation: 5,
+  borderRadius: 20,
+},
+
+ribbonText: {
+  color: '#fff',
+  fontSize: 10,
+  fontWeight: 'bold',
+  textAlign: 'center',
+  letterSpacing: 0.5,
+},
+
+top: {
+  top: 8,
+  left: -20,
+  backgroundColor: '#10b981', 
+},
+
+
+topRight: {
+  top: 8,
+  left: -20,
+  backgroundColor: '#ff6b6b', 
+},
+
+
   categoryText: {
     fontSize: 14,
     fontWeight: '600',
@@ -1232,8 +1322,8 @@ const styles = StyleSheet.create({
     // shadowRadius: 8,
     // borderWidth: 1,
     // borderColor: '#f1f5f9',
-    width: 150,
-    height:230,
+    width: 140,
+    height:210,
     backgroundColor: '#fff',
     padding: 8,
     borderRadius: 16,
@@ -1247,6 +1337,9 @@ const styles = StyleSheet.create({
     borderColor: '#f1f5f9',
     position: 'relative',
     alignItems: 'center',
+    justifyContent:'space-between',
+    paddingBottom:12
+    
   },
   itemImage: {
     // width: 70,
@@ -1265,21 +1358,39 @@ const styles = StyleSheet.create({
     // justifyContent: 'space-between',
     width: '100%',
     alignItems: 'center',
+  justifyContent: 'center',
   },
   itemInfo: {
-    flex: 1,
+  //   flex: 1,
+  //   justifyContent: 'center', 
+  // alignItems: 'center', 
+   alignItems: 'center',
+  justifyContent: 'center',
+  paddingHorizontal: 4,
+  flexGrow: 1,
   },
   itemName: {
     // fontSize: 16,
     // fontWeight: '600',
     // color: '#1e293b',
     // marginBottom: 4,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1e293b',
-    textAlign: 'center',
-    marginBottom: 4,
+
+
+    // fontSize: 14,
+    // fontWeight: '600',
+    // color: '#1e293b',
+    // textAlign: 'center',
+    // marginBottom: 4,
+
+     fontSize: 13,
+  fontWeight: '600',
+  color: '#1e293b',
+  textAlign: 'center',
+  marginBottom: 4,
+  lineHeight: 16,
+
   },
+  
   itemPrice: {
     // fontSize: 18,
     // fontWeight: '700',
@@ -1290,6 +1401,10 @@ const styles = StyleSheet.create({
     color: '#4ea199',
     marginBottom: 8,
   },
+  itemActions: {
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+},
   packableBadge: {
     backgroundColor: '#10b981',
     paddingHorizontal: 10,
@@ -1314,14 +1429,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
 
   },
-  itemActions: {
-    //alignItems: 'center',
-    marginTop: 4,
-    alignItems: 'center',
-  },
+ 
   horizontalList: {
   paddingHorizontal: 10,
-  gap: 10, // You can also use marginRight in itemCard instead
+  gap: 10, 
 },
   addButton: {
 
@@ -1337,7 +1448,8 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    marginTop: 5
+    marginTop: 5,
+    marginBottom:1
   },
   addButtonText: {
     color: '#fff',
@@ -1350,24 +1462,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     borderRadius: 24,
     paddingHorizontal: 2,
-    paddingVertical: 6,
+    paddingVertical: 2,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    marginTop:10
+    marginTop:10,
+    marginBottom:2
   },
   quantityButton: {
-    // padding: 8,
-    // borderRadius: 16,
-    // backgroundColor: '#fff',
-    // elevation: 1,
-    // shadowColor: '#000',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 1,
-    // },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 2,
-    padding: 6,
+ 
+    padding: 2,
     borderRadius: 16,
     backgroundColor: '#fff',
     elevation: 1,
@@ -1375,7 +1478,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    marginTop: 5
+   // marginTop: 5
+   marginBottom:2
   },
   quantityText: {
     fontSize: 16,
@@ -1436,36 +1540,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   favoriteBadge: {
-    // //   backgroundColor: '#fff',
-    // //   paddingHorizontal: 12,
-    // //   paddingVertical: 6,
-    // //  // borderRadius: 16,
-    // //   marginTop: 1,
-    // //  // borderWidth: 2,
-    // //   //borderColor: '#ff4757',
-    // //  // elevation: 1,
-    // //   // shadowColor: '#ff4757',
-    // //   // shadowOffset: {
-    // //   //   width: 0,
-    // //   //   height: 1,
-    // //   // },
-    // //   // shadowOpacity: 0.2,
-    // //   // shadowRadius: 2,
-    // //   position:'absolute'
-    //  position: 'absolute',
-    // top: 8,
-    // right: 8,
-    // backgroundColor: '#fff',
-    // borderRadius: 16,
-    // padding: 6,
-    // zIndex: 10,
-    // // Optional shadow for elevation (iOS & Android)
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 2,
-    // elevation: 3,
-    position: 'absolute',
+      position: 'absolute',
     top: 8,
     right: 8,
     backgroundColor: '#fff',
@@ -1512,6 +1587,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4ea199',
     fontWeight: '600',
+    
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
   },
 
 });  
