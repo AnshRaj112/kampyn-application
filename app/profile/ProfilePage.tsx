@@ -181,23 +181,26 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#777" />
         </TouchableOpacity>
 
+
+       
+
         <TouchableOpacity
           style={styles.item}
-          onPress={() => router.push('/activeorders')}
+          onPress={() => router.push('/orders/Orders')}
         >
           <MaterialIcons name="assignment" size={20} color="#10b981" />
-          <Text style={styles.itemText}>Active Orders</Text>
+          <Text style={styles.itemText}>Orders</Text>
           <Ionicons name="chevron-forward" size={20} color="#777" />
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.item}
           onPress={() => router.push('/pastorders')}
         >
           <MaterialIcons name="history" size={20} color="#3b82f6" />
           <Text style={styles.itemText}>Past Orders</Text>
           <Ionicons name="chevron-forward" size={20} color="#777" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={styles.item}
@@ -219,12 +222,15 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#777" />
         </TouchableOpacity>
 
+
         <TouchableOpacity style={styles.item} onPress={() => router.push('/about/AboutPage')}>
           <Feather name="info" size={20} color="#00CED1" />
           <Text style={styles.itemText}>About Us</Text>
           <Ionicons name="chevron-forward" size={20} color="#777" />
           
         </TouchableOpacity>
+
+    
 
         <TouchableOpacity style={styles.item} onPress={()=>router.push('/help/HelpPage')}>
           <Ionicons name="mail-open-outline" size={20} color="#8A2BE2" />

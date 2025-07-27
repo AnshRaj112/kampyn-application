@@ -68,7 +68,7 @@ interface User {
   name: string;
 }
 
-const PastOrdersPageContent: React.FC = () => {
+const PastOrdersPageContent = () => {
   const router = useRouter();
   const searchParams = useLocalSearchParams();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -234,8 +234,23 @@ useEffect(() => {
     fetchPastOrders();
   }, [user?._id, selectedCollege, router]);
   // Handle URL query parameter on initial load
-  const pathname = usePathname();
-  useEffect(() => {
+//   const pathname = usePathname();
+//   useEffect(() => {
+//   if (collegeId && colleges.length > 0) {
+//     const college = colleges.find((c) => c._id === collegeId);
+//     if (college) {
+//       setSelectedCollege(college);
+//     }
+//   } else {
+//     setSelectedCollege(null);
+//     // Only replace if not already on the correct path
+//     if (pathname !== '/pastorders/PastOrders') {
+//       router.replace('/pastorders/PastOrders');
+//     }
+//   }
+// }, [collegeId, colleges, pathname]);
+
+useEffect(() => {
   if (collegeId && colleges.length > 0) {
     const college = colleges.find((c) => c._id === collegeId);
     if (college) {
@@ -243,32 +258,35 @@ useEffect(() => {
     }
   } else {
     setSelectedCollege(null);
-    // Only replace if not already on the correct path
-    if (pathname !== '/pastorders/PastOrders') {
-      router.replace('/pastorders/PastOrders');
-    }
   }
-}, [collegeId, colleges, pathname]);
+}, [collegeId, colleges]);
+
 
   // Close dropdown when clicking outside
 
 
-  const handleCollegeSelect = (college: College | null) => {
-  setSelectedCollege(college);
+//   const handleCollegeSelect = (college: College | null) => {
+//   setSelectedCollege(college);
   
-  const newParams: Record<string, string> = {};
-  if (college) {
-    newParams.college = college._id;
-  }
+//   const newParams: Record<string, string> = {};
+//   if (college) {
+//     newParams.college = college._id;
+//   }
 
-  // Update the route with new query params
-  router.replace({
-    pathname: "/login/LoginForm", // e.g. "/activeorders"
-    params: newParams,
-  });
+//   // Update the route with new query params
+//   router.replace({
+//     pathname: "/login/LoginForm", // e.g. "/activeorders"
+//     params: newParams,
+//   });
 
+//   setIsDropdownOpen(false);
+// };
+
+const handleCollegeSelect = (college: College | null) => {
+  setSelectedCollege(college);
   setIsDropdownOpen(false);
 };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -328,13 +346,14 @@ useEffect(() => {
     }, [selectedCollege, user?._id, isAuthenticated])
   );
 
-  return (
-    <ScrollView style={styles.container}>
+return (
+    <View style={styles.container}>
       <Toast />
+
       <Text style={styles.header}>Your Past Orders</Text>
 
       {/* Dropdown */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.dropdownButton}
         onPress={() => setIsDropdownOpen(true)}
       >
@@ -342,9 +361,9 @@ useEffect(() => {
           {selectedCollege ? selectedCollege.fullName : 'Select your college'}
         </Text>
         <ChevronDown size={20} />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
-      <Modal visible={isDropdownOpen} transparent animationType="fade">
+      {/* <Modal visible={isDropdownOpen} transparent animationType="fade">
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
@@ -371,15 +390,15 @@ useEffect(() => {
             ))}
           </View>
         </TouchableOpacity>
-      </Modal>
+      </Modal> */}
 
       {/* College Header */}
-      <View style={styles.collegeHeader}>
+      {/* <View style={styles.collegeHeader}>
         <Text style={styles.collegeName}>
           {selectedCollege ? selectedCollege.fullName : 'All Colleges'}
         </Text>
         <Text style={styles.subTitle}>Your Past Orders</Text>
-      </View>
+      </View> */}
 
       {/* Conditional Rendering */}
       {loading && !refreshing ? (
@@ -390,7 +409,7 @@ useEffect(() => {
           <Text>You haven't placed any orders yet.</Text>
           <TouchableOpacity
             style={styles.homeButton}
-            onPress={() =>router.push('/login/LoginForm')}
+            onPress={() => router.push('/login/LoginForm')}
           >
             <Text style={styles.homeButtonText}>Go to Home</Text>
           </TouchableOpacity>
@@ -400,61 +419,74 @@ useEffect(() => {
           data={pastOrders}
           keyExtractor={(item) => item._id}
           renderItem={({ item: order }) => (
-            <View style={styles.orderCard}>
-              <View style={styles.orderHeader}>
-                <View style={styles.orderInfo}>
-                  <Text style={styles.orderId}>Order #{order.orderNumber && order.orderNumber !== 'Unknown' ? order.orderNumber : order.orderId}</Text>
-                  <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
-                  {order.vendorId && (
-                    <View style={styles.orderSource}>
-                      <Text><Text style={styles.bold}>Vendor:</Text> {order.vendorId.fullName}</Text>
-                      {order.vendorId.college && (
-                        <Text><Text style={styles.bold}>College:</Text> {order.vendorId.college.fullName}</Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.orderStatus, { backgroundColor: getStatusColor(order.status) }]}>
-                    {order.status}
+            <View style={styles.card}>
+              {/* <View style={styles.cardTopRow}>
+             
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.vendorName}>{order.vendorId?.fullName || 'Vendor'}</Text>
+                  <Text style={styles.price}>₹{order.total?.toFixed(2)}</Text>
+                  <Text style={styles.meta}>
+                    {formatDate(order.createdAt)} • {order.items.length} Item{order.items.length > 1 ? 's' : ''}
                   </Text>
-                  <Text style={styles.orderType}>{order.orderType}</Text>
                 </View>
-              </View>
+                <Text style={styles.orderId}>#{order.orderNumber?.slice(-6)}</Text>
+              </View> */}
+              <View style={styles.cardTopRow}>
+  <View style={{ flex: 1, marginLeft: 12 }}>
+    <Text style={styles.vendorName}>{order.vendorId?.fullName || 'Vendor'}</Text>
+    <Text style={styles.price}>₹{order.total?.toFixed(2)}</Text>
+    <Text style={styles.meta}>
+      {formatDate(order.createdAt)} • {order.items.length} Item{order.items.length > 1 ? 's' : ''}
+    </Text>
+    <Text
+      style={[
+        styles.statusLabel,
+        {
+          color: order.status === 'Cancelled' ? 'red' : '#10b981',
+          marginTop: 4, // add a little space below meta
+        },
+      ]}
+    >
+      {order.status?.toUpperCase()}
+    </Text>
+  </View>
+  <Text style={styles.orderId}>#{order.orderNumber?.slice(-6)}</Text>
+</View>
 
-              <View style={styles.collectorInfo}>
-                <Text style={styles.collectorName}>{order.collectorName}</Text>
-                <Text>{order.collectorPhone}</Text>
-                {order.address && <Text style={styles.address}>{order.address}</Text>}
-              </View>
 
-              <View style={styles.itemsList}>
-                {order.items.map((item, index) => (
-                  <View key={index} style={styles.itemCard}>
-                    <View>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      <Text style={styles.itemDetails}>
-                        ₹{item.price} per {item.unit} • {item.type}
-                      </Text>
-                    </View>
-                    <Text style={styles.itemQuantity}>{item.quantity}</Text>
-                  </View>
-                ))}
-              </View>
+              <View style={styles.buttonRow}>
+                <Text
+                  style={[
+                    styles.statusLabel,
+                    {
+                      color: order.status === 'Cancelled' ? 'red' : '#10b981',
+                    },
+                  ]}
+                >
+                  {order.status?.toUpperCase()}
+                </Text>
 
-              <Text style={styles.totalAmount}>Total: ₹{order.total}</Text>
+                {/* <View style={styles.actions}>
+                  <TouchableOpacity style={styles.rateButton}>
+                    <Text style={styles.rateText}>Rate</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.reorderButton}>
+                    <Text style={styles.reorderText}>Re-Order</Text>
+                  </TouchableOpacity>
+                </View> */}
+              </View>
             </View>
           )}
           contentContainerStyle={styles.orderGrid}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4ea199"]} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4ea199']} />
           }
         />
       )}
-    </ScrollView>
+    </View>
   );
-
 };
+
 export default PastOrdersPageContent;
 const styles = StyleSheet.create({
   container: {
@@ -463,11 +495,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 18,
+   // fontWeight: 'bold',
+   // textAlign: 'center',
     marginBottom: 24,
     color: '#4ea199',
+    fontWeight: '600',
+    
   },
   dropdownButton: {
     backgroundColor: '#e5e7eb',
@@ -508,11 +542,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6fc3bd',
   },
-  loadingText: {
-    textAlign: 'center',
-    marginTop: 32,
-    fontSize: 18,
-  },
   emptyState: {
     alignItems: 'center',
     marginTop: 32,
@@ -535,95 +564,80 @@ const styles = StyleSheet.create({
   orderGrid: {
     paddingBottom: 32,
   },
-  orderCard: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: 16,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  orderHeader: {
+  cardTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  orderInfo: {
-    flex: 1,
+  imagePlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#cbd5e1',
+  },
+  vendorName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  price: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  meta: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
   },
   orderId: {
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  orderDate: {
     fontSize: 12,
-    color: '#555',
+    color: '#9ca3af',
   },
-  orderStatus: {
-    color: 'white',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    fontSize: 10,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  orderType: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    fontSize: 10,
-    borderRadius: 6,
-    color: '#374151',
-  },
-  collectorInfo: {
-    backgroundColor: '#f8f9fa',
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 8,
-  },
-  collectorName: {
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  address: {
-    fontStyle: 'italic',
-    color: '#666',
-    marginTop: 4,
-  },
-  itemsList: {
-    marginTop: 8,
-  },
-  itemCard: {
-    backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+  buttonRow: {
     flexDirection: 'row',
+    marginTop: 12,
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  itemName: {
+  statusLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginRight:10
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+    textTransform:'uppercase'
+  },
+  rateButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#10b981',
+    borderRadius: 6,
+  },
+  rateText: {
+    color: '#10b981',
     fontWeight: '600',
   },
-  itemDetails: {
-    color: '#666',
-    fontSize: 12,
+  reorderButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: '#0f766e',
+    borderRadius: 6,
   },
-  itemQuantity: {
-    backgroundColor: '#4ea199',
-    color: 'white',
-    fontWeight: '600',
-    paddingHorizontal: 8,
-    borderRadius: 4,
-  },
-  totalAmount: {
-    textAlign: 'right',
-    fontWeight: '700',
-    fontSize: 18,
-    color: '#4ea199',
-    marginTop: 8,
-  },
-  orderSource: {
-    marginTop: 8,
-  },
-  bold: {
+  reorderText: {
+    color: '#fff',
     fontWeight: '600',
   },
 });

@@ -11,9 +11,11 @@ interface Props {
   isLoading?: boolean;
 }
 
+
 const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove, isLoading = false }) => (
   <View style={styles.card}>
-    <View style={styles.left}>
+    {/* Top section: image + name + price */}
+    <View style={styles.topRow}>
       {item.image ? (
         <Image source={{ uri: item.image }} style={styles.image} />
       ) : (
@@ -25,6 +27,7 @@ const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove,
       </View>
     </View>
 
+    {/* Controls below */}
     <View style={styles.controls}>
       <TouchableOpacity
         onPress={() => onDecrease(item._id)}
@@ -40,8 +43,8 @@ const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove,
 
       <Text style={styles.quantity}>{item.quantity}</Text>
 
-      <TouchableOpacity 
-        onPress={() => onIncrease(item._id)} 
+      <TouchableOpacity
+        onPress={() => onIncrease(item._id)}
         style={styles.controlButton}
         disabled={isLoading}
       >
@@ -52,8 +55,8 @@ const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove,
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        onPress={() => onRemove(item._id)} 
+      <TouchableOpacity
+        onPress={() => onRemove(item._id)}
         style={styles.controlButton}
         disabled={isLoading}
       >
@@ -66,23 +69,19 @@ const CartItemCard: React.FC<Props> = ({ item, onIncrease, onDecrease, onRemove,
     </View>
   </View>
 );
-
 export default CartItemCard;
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#e0f5f3",
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 8,
-    elevation: 2,
-    flexWrap: "wrap",
+  
+     padding: 16,
+  backgroundColor: "#e0f5f3",
+  borderRadius: 16,
+  marginBottom: 16,
+  shadowColor: "#000",
+  shadowOpacity: 0.06,
+  shadowOffset: { width: 0, height: 6 },
+  shadowRadius: 8,
+  elevation: 2,
   },
   left: {
     flexDirection: "row",
@@ -104,13 +103,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   details: {
-    marginLeft: 12,
-    flexShrink: 1,
+    // marginLeft: 12,
+    // flexShrink: 1,
+    // maxWidth: 140,
+
+     flex: 1,
   },
   name: {
     fontSize: 16,
     fontWeight: "600",
     color: "#01796f",
+    
   },
   price: {
     fontSize: 14,
@@ -121,13 +124,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    flexWrap: "wrap",
     justifyContent: "center",
-    marginTop: 12,
+    marginTop: 16,
   },
   controlButton: {
-    width: 36,
-    height: 36,
+    width: 25,
+    height: 25,
     borderRadius: 18,
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -145,4 +147,10 @@ const styles = StyleSheet.create({
     minWidth: 24,
     textAlign: "center",
   },
+  topRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 12,
+},
+
 });

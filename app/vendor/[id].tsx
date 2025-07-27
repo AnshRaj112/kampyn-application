@@ -549,6 +549,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
+    marginTop:30
   },
   backButton: {
     padding: 8,
@@ -559,6 +560,7 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     flex: 1,
     textAlign: 'center',
+    
   },
   headerSpacer: {
     width: 40,
@@ -611,19 +613,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
+    maxHeight:60,
   },
   typeFiltersContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    // paddingHorizontal: 20,
+    // paddingVertical: 15,
+     flexDirection: 'row',     // Ensures horizontal layout
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  paddingHorizontal: 20,
+  paddingVertical: 10,
+  gap: 8,        
   },
   typeButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    // paddingHorizontal: 10,
+    // paddingVertical: 2,
+    // borderRadius: 20,
+    // backgroundColor: '#f8f9fa',
+    // marginRight: 10,
+    // borderWidth: 1,
+    // borderColor: '#e9ecef',
+    paddingHorizontal: 14,
+  paddingVertical: 6,
+  borderRadius: 20,
+  backgroundColor: '#f8f9fa',
+  borderWidth: 1,
+  borderColor: '#e9ecef',
+  minWidth: 70,            // Force a smaller consistent width
+  alignItems: 'center',
   },
   activeTypeButton: {
     backgroundColor: '#007AFF',

@@ -19,10 +19,8 @@ import { config } from "../../config";
 
 
 // IMPORTANT: Replace '192.168.1.42' with your computer's local IP address for mobile access
-// Remove the unused BACKEND_URL constant
-// const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://192.168.1.42:5001";
-const { width } = useWindowDimensions();
-const isMobile = width < 1100;
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://192.168.1.42:5001";
+
 
 
 interface ExtraItem {
@@ -113,6 +111,9 @@ const toastConfig = {
 };
 
 export default function CartScreen() {
+  const { width } = useWindowDimensions();
+const isMobile = width < 1100;
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [extras, setExtras] = useState<FoodItem[]>([]);
   const [userLoggedIn, setUserLoggedIn] = useState<boolean>(false);
@@ -718,6 +719,7 @@ const addToCart = async (item: FoodItem) => {
     setRefreshing(false);
   };
 
+
  return (
     <View style={styles.container}>
       <Toast position="bottom" config={toastConfig} />
@@ -734,34 +736,34 @@ const addToCart = async (item: FoodItem) => {
           <View style={styles.emptyCartMessage}>
             <Text style={styles.emptyTitle}>Oops! Your cart is empty</Text>
             <Text style={styles.emptyText}>Looks like you haven't added any items yet.</Text>
-            <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/help/HelpPage')}>
+            <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/home')}>
               <Text style={styles.buttonText}>Go to Home</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <View style={[styles.vendorInfo, {borderWidth: 1, borderColor: '#f00'}]}>
-              <Text style={styles.vendorText}>Vendor: {getVendorName(cart[0]?.vendorName)}</Text>
-            </View>
+        
 
-            {/* Cart items scrollable section */}
-            <View style={{ height: 350, maxHeight: 400, marginBottom: 16, ...(Platform.OS === 'web' ? { zIndex: 0, position: 'relative' } : {}) }}>
-              <ScrollView>
-                {cart.map((item) => (
-                  <View key={item._id} style={{ minHeight: 80, marginVertical: 4 }}>
-                    <CartItemCard 
-                      item={item} 
-                      onIncrease={() => increaseQty(item._id)}
-                      onDecrease={() => decreaseQty(item._id)}
-                      onRemove={() => removeItem(item._id)}
-                      isLoading={loadingItems.has(item._id)}
-                    />
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
+            <View style={styles.vendorSection}>
+  <Text style={styles.sectionTitle}>Vendor: {getVendorName(cart[0]?.vendorName)}</Text>
 
-            <View style={[styles.extrasSection, {borderWidth: 1, borderColor: '#00f'}]}>
+  <ScrollView style={{ marginTop: 10 }} nestedScrollEnabled={true}>
+    {cart.map((item) => (
+      <View key={item._id} style={{ marginBottom: 12 }}>
+        <CartItemCard 
+          item={item}
+          onIncrease={() => increaseQty(item._id)}
+          onDecrease={() => decreaseQty(item._id)}
+          onRemove={() => removeItem(item._id)}
+          isLoading={loadingItems.has(item._id)}
+        />
+      </View>
+    ))}
+  </ScrollView>
+</View>
+
+
+            <View style={styles.extrasSection}>
               <Text style={styles.sectionTitle}>More from {getVendorName(cart[0]?.vendorName)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.extrasList}>
                 {filteredExtras.length > 0 ? (
@@ -787,7 +789,7 @@ const addToCart = async (item: FoodItem) => {
 
             {/* Move BillBox here */}
             {cart.length > 0 && userData && (
-              <View style={[styles.cartRight, {borderWidth: 1, borderColor: '#fa0'}]}>
+              <View style={styles.cartRight}>
                 <BillBox
                   userId={userData._id}
                   items={cart}
@@ -857,6 +859,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   vendorInfo: {
+    marginTop:10,
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
@@ -906,4 +909,32 @@ const styles = StyleSheet.create({
           shadowRadius: 8,
         }),
   },
+  vendorSection: {
+  backgroundColor: '#fff',
+  borderRadius: 16,
+  padding: 20,
+  marginTop: 10,
+  marginBottom: 20,
+  ...(Platform.OS === 'web'
+    ? {
+        zIndex: 0,
+        position: 'relative',
+      }
+    : {
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+      }),
+},
+
 });
+
+
+
+
+
+
+
+

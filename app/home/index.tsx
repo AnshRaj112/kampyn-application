@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +33,8 @@ const HomePage = () => {
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 60) / 2;
 
   useEffect(() => {
     const fetchColleges = async () => {
@@ -102,13 +105,15 @@ const HomePage = () => {
   }
 
   return (
-    <View style={styles.outerContainer}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+              <Text style={styles.title}>Pick your college</Text>
+
+      {/* <View style={styles.header}>
         <Text style={styles.title}>Pick your college</Text>
-      </View>
+      </View> */}
       
       <View style={styles.cardWrapper}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.cardContainer}>
           {colleges
             .filter((college) => college.slug)
             .map((college) => (
@@ -129,15 +134,18 @@ const HomePage = () => {
     </View>
   );
 };
-
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 60) / 2;
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+   // backgroundColor: '#1a1a2e',
   },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+   // backgroundColor: '#f8fafc',
+    backgroundColor: '#F6F6F6',
+
   },
   header: {
     flexDirection: 'row',
@@ -147,12 +155,26 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
   },
+  // title: {
+  //   color: '#FFFFFF',
+  //   fontSize: 22,
+  //   fontWeight: '700',
+  //   textAlign: 'center',
+  // },
   title: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
+  fontSize: 40,
+  fontWeight: '700',
+  color: '#66b2a3', // changed from white
+  textAlign: 'center',
+  marginBottom: 30,
+  marginTop:40
+},
+cardContainer: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  paddingBottom: 40,
+},
   cardWrapper: {
     flex: 1,
     backgroundColor: '#F6F6F6',
@@ -164,21 +186,34 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   collegeItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+    // flexDirection: 'row',
+    // justifyContent: 'space-between',
+    // alignItems: 'center',
+    // backgroundColor: '#FFFFFF',
+    // borderRadius: 12,
+    // padding: 16,
+    // marginBottom: 12,
+    // elevation: 2,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 2,
+    // },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 3.84,
+     width: CARD_WIDTH,
+  backgroundColor: '#f1f5f9',
+  padding: 20,
+  borderRadius: 16,
+  marginBottom: 20,
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.05,
+  shadowRadius: 3,
+  elevation: 2,
   },
   collegeName: {
     fontSize: 16,

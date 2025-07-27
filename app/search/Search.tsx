@@ -451,7 +451,29 @@ export default function SearchPage() {
 
   const renderSection = (title: string, data: SearchItem[]) => {
     if (data.length === 0) return null;
-
+ // For Food Courts (vendors)
+  if (title === 'Food Courts') {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <View style={styles.gridContainer}>
+          {data.map((vendor) => (
+            <View key={vendor._id} style={styles.gridCard}>
+              <Text style={styles.gridCardTitle}>{vendor.name}</Text>
+              <TouchableOpacity
+                style={styles.checkMenuButton}
+                onPress={() =>
+                  router.push({ pathname: '/vendor/[id]', params: { id: vendor._id } })
+                }
+              >
+                <Text style={styles.checkMenuText}>Check Menu</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{title}</Text>
@@ -522,6 +544,57 @@ export default function SearchPage() {
       </View>
 
       {/* Search Input */}
+      {/* <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Ionicons name="search" size={20} color="#64748b" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search for food or vendors..."
+            value={query}
+            onChangeText={setQuery}
+            autoFocus
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')}>
+              <Ionicons name="close-circle" size={20} color="#64748b" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity 
+          style={styles.searchButton}
+          onPress={() => {}}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.searchButtonText}>Search</Text>
+          )}
+        </TouchableOpacity>
+      </View> */}
+
+      {/* Results */}
+      <ScrollView style={styles.resultsContainer} showsVerticalScrollIndicator={false}>
+        {query.trim() === '' ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              Start typing to search for food items and vendors...
+            </Text>
+          </View>
+        ) : searchResults.vendors.length === 0 && searchResults.items.length === 0 && !loading ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No results found</Text>
+            <Text style={styles.emptyStateSubtext}>Try different keywords</Text>
+          </View>
+        ) : (
+          <>
+            {renderSection('Food Courts', searchResults.vendors)}
+            {renderSection('Food Items', searchResults.items)}
+          </>
+        )}
+      </ScrollView>
+
+   {/* Search Input */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <Ionicons name="search" size={20} color="#64748b" style={styles.searchIcon} />
@@ -551,26 +624,6 @@ export default function SearchPage() {
         </TouchableOpacity>
       </View>
 
-      {/* Results */}
-      <ScrollView style={styles.resultsContainer} showsVerticalScrollIndicator={false}>
-        {query.trim() === '' ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              Start typing to search for food items and vendors...
-            </Text>
-          </View>
-        ) : searchResults.vendors.length === 0 && searchResults.items.length === 0 && !loading ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No results found</Text>
-            <Text style={styles.emptyStateSubtext}>Try different keywords</Text>
-          </View>
-        ) : (
-          <>
-            {renderSection('Food Courts', searchResults.vendors)}
-            {renderSection('Food Items', searchResults.items)}
-          </>
-        )}
-      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -581,13 +634,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'space-between',
+  //   paddingHorizontal: 20,
+  //   paddingTop: 20,
+  //   paddingBottom: 20,
+  //   backgroundColor: '#4ea199',
+  //   borderBottomLeftRadius: 20,
+  // borderBottomRightRadius: 20,
+   flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: '#4ea199',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    elevation: 4,
+    shadowColor: '#4ea199',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   backButton: {
     padding: 8,
@@ -814,4 +886,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#4ea199',
   },
+  gridContainer: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  gap: 10,
+},
+
+gridCard: {
+  width: '47%', // change to '22%' for 4 per row
+  backgroundColor: '#fff',
+  borderRadius: 12,
+  paddingVertical: 20,
+  paddingHorizontal: 10,
+  marginBottom: 20,
+  alignItems: 'center',
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 3,
+},
+
+gridCardTitle: {
+  fontSize: 16,
+  fontWeight: '700',
+  color: '#1e293b',
+  textAlign: 'center',
+  marginBottom: 12,
+},
+
+checkMenuButton: {
+  backgroundColor: '#2c9c92',
+  paddingVertical: 10,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+},
+
+checkMenuText: {
+  color: '#fff',
+  fontSize: 14,
+  fontWeight: '600',
+},
+
 });

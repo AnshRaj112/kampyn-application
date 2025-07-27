@@ -74,7 +74,12 @@ const VendorModal = ({
                     styles.vendorItem,
                     selectedVendor?._id === vendor._id && styles.selectedVendor
                   ]}
-                  onPress={() => onVendorSelect(vendor)}
+                  // onPress={() => onVendorSelect(vendor)}
+                  onPress={() => {
+  console.log("Selected vendor ID:", vendor._id);
+  onVendorSelect(vendor);
+}}
+
                 >
                   <View style={styles.vendorInfo}>
                     <Text style={styles.vendorName}>{vendor.name}</Text>
