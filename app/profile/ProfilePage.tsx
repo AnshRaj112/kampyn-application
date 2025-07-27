@@ -223,13 +223,6 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
 
-
- <TouchableOpacity style={styles.item} onPress={()=>router.push('/vendor/index')}>
-          <Entypo name="help" size={20} color="#FF6347" />
-          <Text style={styles.itemText}>Vendor</Text>
-          <Ionicons name="chevron-forward" size={20} color="#777" />
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.item} onPress={() => router.push('/about/AboutPage')}>
           <Feather name="info" size={20} color="#00CED1" />
           <Text style={styles.itemText}>About Us</Text>
