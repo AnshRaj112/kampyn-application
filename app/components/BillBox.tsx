@@ -284,14 +284,20 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     vendorDeliverySettings
   });
   
-  // More robust packable item detection
-  const packableItems = items.filter((i) => i.packable === true);
+  // More robust packable item detection (match web): Produce always packable; Retail based on flag
+  const packableItems = items.filter((i) => {
+    // Some carts provide category; if Produce, always packable
+    const isProduce = (i as any).category === "Produce";
+    if (isProduce) return true;
+    return i.packable === true;
+  });
   
   console.log("📦 Mobile Packable items found:", packableItems.map(i => ({ name: i.name, packable: i.packable, quantity: i.quantity })));
   
   // Ensure charges are available
   const packingCharge = charges.packingCharge || 5;
   const deliveryCharge = charges.deliveryCharge || 50;
+  const platformFee = 2; // Match web BillBox flat fee
   
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const packaging =
@@ -299,7 +305,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
       ? packableItems.reduce((s, i) => s + packingCharge * i.quantity, 0)
       : 0;
   const delivery = orderType === "delivery" ? deliveryCharge : 0;
-  const grandTotal = itemTotal + packaging + delivery;
+  const grandTotal = itemTotal + packaging + delivery + platformFee;
   
   console.log("💰 Mobile BillBox Calculation:", {
     itemTotal,
@@ -462,6 +468,9 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           collectorName: name,
           collectorPhone: phone,
           address,
+          packingCharge,
+          deliveryCharge,
+          platformFee,
           finalTotal: grandTotal
         };
         
@@ -713,6 +722,15 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
                   color: #ff4444;
                   margin-top: 10px;
                 }
+                .cta {
+                  margin-top: 16px;
+                  background-color: #01796f;
+                  color: #fff;
+                  border: none;
+                  padding: 10px 16px;
+                  border-radius: 8px;
+                  font-size: 16px;
+                }
               </style>
             </head>
             <body>
@@ -721,6 +739,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
                 <div class="spinner"></div>
                 <p>Please wait while we connect you to Razorpay</p>
                 <div id="error" class="error" style="display: none;"></div>
+                <button id="openBtn" class="cta" style="display: none;">Continue to Pay</button>
               </div>
               
               <script>
@@ -734,11 +753,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
                       console.error("❌ Razorpay SDK not loaded");
                       document.getElementById('error').textContent = "Failed to load payment gateway. Please try again.";
                       document.getElementById('error').style.display = 'block';
+                      document.getElementById('openBtn').style.display = 'inline-block';
                       return;
                     }
                     
                     console.log("✅ Razorpay SDK loaded successfully");
                   
+                  var rzp = null;
                   var options = {
                     key: "${razorpayKey}",
                     amount: ${Math.round(frontendAmountInPaise)},
@@ -849,7 +870,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
                   }
                   
                   try {
-                    var rzp = new Razorpay(options);
+                    rzp = new Razorpay(options);
                     console.log("✅ Razorpay instance created");
                     
                     // Add timeout for payment modal (increased to 60 seconds)
@@ -885,10 +906,27 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
                         } else {
                           clearTimeout(paymentTimeout);
                           console.error("❌ Failed to open Razorpay after " + maxOpenAttempts + " attempts");
-                          window.ReactNativeWebView.postMessage(JSON.stringify({
-                            type: 'payment_error',
-                            error: 'Failed to open payment gateway after multiple attempts'
-                          }));
+                          document.getElementById('error').textContent = "We couldn't auto-open the payment sheet. Tap Continue to proceed.";
+                          document.getElementById('error').style.display = 'block';
+                          var btn = document.getElementById('openBtn');
+                          btn.style.display = 'inline-block';
+                          btn.onclick = function() {
+                            try {
+                              if (rzp) {
+                                rzp.open();
+                              } else {
+                                window.ReactNativeWebView.postMessage(JSON.stringify({
+                                  type: 'payment_error',
+                                  error: 'Payment gateway not initialized'
+                                }));
+                              }
+                            } catch (e) {
+                              window.ReactNativeWebView.postMessage(JSON.stringify({
+                                type: 'payment_error',
+                                error: 'Failed to open payment gateway: ' + (e && e.message ? e.message : 'Unknown error')
+                              }));
+                            }
+                          };
                         }
                       }
                     }
@@ -1034,6 +1072,12 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
             </View>
           )}
 
+          {/* Platform Fee */}
+          <View style={styles.extra}>
+            <Text style={styles.extraText}>Platform Fee</Text>
+            <Text style={styles.extraText}>₹{platformFee}</Text>
+          </View>
+
           <View style={styles.divider} />
 
                   <View style={styles.total}>
@@ -1098,23 +1142,35 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           </View>
           
           <WebView
-            source={{ html: paymentHtml }}
+            source={{ html: paymentHtml, baseUrl: config.backendUrl }}
             style={styles.webview}
             onMessage={handleWebViewMessage}
             javaScriptEnabled={true}
+            javaScriptCanOpenWindowsAutomatically={true}
             domStorageEnabled={true}
             startInLoadingState={true}
             scalesPageToFit={true}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
-            mixedContentMode="compatibility"
+            mixedContentMode="always"
+            thirdPartyCookiesEnabled={true}
+            setSupportMultipleWindows={true}
+            sharedCookiesEnabled={true}
             // Enhanced WebView settings for Razorpay
             allowsBackForwardNavigationGestures={false}
             allowsLinkPreview={false}
             cacheEnabled={false}
-            incognito={true}
+            incognito={false}
             // Security settings
             originWhitelist={['*']}
+            onOpenWindow={(e) => {
+              try {
+                const targetUrl = e.nativeEvent?.targetUrl;
+                if (targetUrl) {
+                  setCurrentPaymentUrl(targetUrl);
+                }
+              } catch (_) {}
+            }}
             // Additional settings for better compatibility
             bounces={false}
             scrollEnabled={false}
