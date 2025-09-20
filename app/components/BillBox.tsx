@@ -107,6 +107,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }): React.ReactElemen
             
             // Use the actual orderId from the verification response
             const actualOrderId = verifyResponse.data.orderId;
+            
+            if (!actualOrderId) {
+              console.error("❌ No orderId returned from web payment verification");
+              Alert.alert("Error", "Payment successful but order ID not received. Please contact support.");
+              return;
+            }
+            
             onOrder(actualOrderId);
           } catch (error: any) {
             console.error("❌ Payment verification failed:", error);
@@ -202,6 +209,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }): React.ReactElemen
           // Use the actual orderId from the verification response
           const actualOrderId = verifyResponse.data.orderId;
           console.log("🎉 Mobile: Payment successful, redirecting to payment page with orderId:", actualOrderId);
+          
+          if (!actualOrderId) {
+            console.error("❌ No orderId returned from payment verification");
+            Alert.alert("Error", "Payment successful but order ID not received. Please contact support.");
+            return;
+          }
+          
           onOrder(actualOrderId);
         } catch (error: any) {
           console.error("❌ Payment verification failed:", error);
@@ -256,6 +270,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }): React.ReactElemen
               // Use the actual orderId from the verification response
               const actualOrderId = verifyResponse.data.orderId;
               console.log("🎉 Payment successful from URL, redirecting with orderId:", actualOrderId);
+              
+              if (!actualOrderId) {
+                console.error("❌ No orderId returned from payment verification from URL");
+                Alert.alert("Error", "Payment successful but order ID not received. Please contact support.");
+                return;
+              }
+              
               onOrder(actualOrderId);
             } catch (error: any) {
               console.error("❌ Payment verification failed from URL:", error);
