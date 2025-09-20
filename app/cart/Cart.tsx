@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
+import { useEffect, useState } from "react";
 import { View, ScrollView, StyleSheet, Text,useWindowDimensions, Button, RefreshControl, ActivityIndicator } from "react-native";
 import axios from "axios";
 import CartItemCard from "../components/CartItemCard"; 

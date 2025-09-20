@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -27,7 +28,7 @@ interface Props {
   onOrder: (orderId: string) => void;
 }
 
-const BillBox: React.FC<Props> = ({ userId, items, onOrder }): React.ReactElement => {
+const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.ReactElement => {
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

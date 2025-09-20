@@ -10,7 +10,6 @@ import{
     TouchableOpacity,
     Platform
 }from "react-native";
-import { config } from "../config";
 
 interface OrderItem {
   name: string;
@@ -49,13 +48,6 @@ const PaymentPage = () => {
   
   // Extract orderId from searchParams if not available from destructuring
   const actualOrderId = orderId || searchParams.orderId as string || searchParams.orderid as string;
-  
-  console.log("🎉 Mobile Payment Page: Received orderId:", actualOrderId);
-  console.log("🎉 Mobile Payment Page: All search params:", searchParams);
-  console.log("🎉 Mobile Payment Page: Extracted orderId:", actualOrderId);
-  console.log("🎉 Mobile Payment Page: orderId from destructuring:", orderId);
-  console.log("🎉 Mobile Payment Page: orderId from searchParams:", searchParams.orderId);
-  console.log("🎉 Mobile Payment Page: orderid from searchParams:", searchParams.orderid);
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [vendorPreparationTime, setVendorPreparationTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
