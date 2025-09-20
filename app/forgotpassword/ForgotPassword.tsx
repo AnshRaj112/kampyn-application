@@ -37,7 +37,7 @@ export default function ForgotPasswordScreen() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${config.backendUrl}/api/user/auth/forgotpassword`, {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/forgotpassword`, {
         identifier,
       });
 

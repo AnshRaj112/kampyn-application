@@ -172,7 +172,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         router.push("/login/LoginForm");
         return;
       }
-      const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(response.data);
@@ -194,7 +194,7 @@ const FavouriteFoodPageContent: React.FC = () => {
     if (!isAuthenticated) return;
     try {
       const configAuth = await getAuthConfig();
-      const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/list`, configAuth);
       setColleges(response.data);
     } catch (error) {
       console.error("Error fetching colleges:", error);
@@ -206,7 +206,7 @@ const FavouriteFoodPageContent: React.FC = () => {
     if (!isAuthenticated || !user?._id) return;
     try {
       const configAuth = await getAuthConfig();
-      const response = await axios.get(`${config.backendUrl}/cart/${user._id}`, configAuth);
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${user._id}`, configAuth);
       const cartData = response.data.cart || [];
       const formattedCartItems = cartData.map((item: CartResponseItem) => ({
         _id: item.itemId,
@@ -233,7 +233,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       const configAuth = await getAuthConfig();
       if (selectedCollege) {
         const response = await axios.get(
-          `${config.backendUrl}/api/vendor/list/uni/${selectedCollege._id}`,
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/vendor/list/uni/${selectedCollege._id}`,
           configAuth
         );
         const vendorsMap = response.data.reduce((acc: { [key: string]: string }, vendor: Vendor) => {
@@ -243,7 +243,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         setVendors(vendorsMap);
       } else {
         const vendorPromises = colleges.map((college) =>
-          axios.get(`${config.backendUrl}/api/vendor/list/uni/${college._id}`, configAuth)
+          axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/vendor/list/uni/${college._id}`, configAuth)
         );
         const responses = await Promise.all(vendorPromises);
         const allVendors = responses.flatMap((res) => res.data);
@@ -281,8 +281,8 @@ const FavouriteFoodPageContent: React.FC = () => {
       setLoading(true);
       const configAuth = await getAuthConfig();
       const url = selectedCollege
-        ? `${config.backendUrl}/fav/${user._id}/${selectedCollege._id}`
-        : `${config.backendUrl}/fav/${user._id}`;
+        ? `${process.env.EXPO_PUBLIC_BACKEND_URL}/fav/${user._id}/${selectedCollege._id}`
+        : `${process.env.EXPO_PUBLIC_BACKEND_URL}/fav/${user._id}`;
       const response = await axios.get(url, configAuth);
       const sortedFavorites = selectedCollege
         ? response.data.favourites
@@ -371,7 +371,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       const isRetail = categories.retail.includes(itemType);
       const isProduce = categories.produce.includes(itemType);
       const token = await getAuthToken();
-      const response = await fetch(`${config.backendUrl}/api/item/vendors/${itemId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/vendors/${itemId}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -447,7 +447,7 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       if (existingItem) {
         await axios.post(
-          `${config.backendUrl}/cart/add-one/${user._id}`,
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add-one/${user._id}`,
           {
             itemId: foodItem._id,
             kind: foodItem.kind,
@@ -457,7 +457,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         );
       } else {
         await axios.post(
-          `${config.backendUrl}/cart/add/${user._id}`,
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add/${user._id}`,
           {
             itemId: foodItem._id,
             kind: foodItem.kind,
@@ -469,7 +469,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       }
 
       const response = await axios.get(
-        `${config.backendUrl}/cart/${user._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${user._id}`,
         await getAuthConfig()
       );
 
@@ -559,7 +559,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       const configAuth = await getAuthConfig();
 
       await axios.post(
-        `${config.backendUrl}/cart/add-one/${user._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add-one/${user._id}`,
         {
           itemId: foodItem._id,
           kind: foodItem.kind,
@@ -568,7 +568,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         configAuth
       );
 
-      const response = await axios.get(`${config.backendUrl}/cart/${user._id}`, configAuth);
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${user._id}`, configAuth);
       const cartData = response.data.cart || [];
 
       const formattedCartItems = cartData.map((item: CartResponseItem) => ({
@@ -638,7 +638,7 @@ const FavouriteFoodPageContent: React.FC = () => {
 
     try {
       await axios.post(
-        `${config.backendUrl}/cart/remove-one/${user._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/remove-one/${user._id}`,
         {
           itemId: foodItem._id,
           kind: foodItem.kind,
@@ -648,7 +648,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       );
 
       const response = await axios.get(
-        `${config.backendUrl}/cart/${user._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${user._id}`,
         configAuth
       );
 
@@ -701,7 +701,7 @@ const FavouriteFoodPageContent: React.FC = () => {
 
     try {
       await axios.post(
-        `${config.backendUrl}/cart/clear/${user._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/clear/${user._id}`,
         {},
         await getAuthConfig()
       );

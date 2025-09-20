@@ -19,7 +19,7 @@ import { config } from "../../config";
 
 
 // IMPORTANT: Replace '192.168.1.42' with your computer's local IP address for mobile access
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://192.168.1.42:5001";
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "";
 
 
 
@@ -132,7 +132,7 @@ const isMobile = width < 1100;
     const id = userId || userData?._id;
     try {
       const response = await axios.get<ExtrasResponse>(
-        `${config.backendUrl}/cart/extras/${id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/extras/${id}`,
         await getAuthHeaders()
       );
       const formatted: FoodItem[] = response.data.extras.map((e: ExtraItem) => ({
@@ -154,7 +154,7 @@ const isMobile = width < 1100;
     try {
       const token = await getToken();
       console.log("[Cart] Token on mobile:", token);
-      console.log("[Cart] Backend URL:", config.backendUrl);
+      console.log("[Cart] Backend URL:", process.env.EXPO_PUBLIC_BACKEND_URL);
 
       if (!token) {
         setUserLoggedIn(false);
@@ -165,8 +165,8 @@ const isMobile = width < 1100;
         return;
       }
 
-      console.log("[Cart] Making auth request to:", `${config.backendUrl}/api/user/auth/user`);
-      const res = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+      console.log("[Cart] Making auth request to:", `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`);
+      const res = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -188,9 +188,9 @@ const isMobile = width < 1100;
       setUserLoggedIn(true);
       setUserData(user);
 
-      console.log("[Cart] Making cart request to:", `${config.backendUrl}/cart/${user._id}`);
+      console.log("[Cart] Making cart request to:", `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${user._id}`);
       const cartRes = await axios.get<CartResponse>(
-        `${config.backendUrl}/cart/${user._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${user._id}`,
         await getAuthHeaders()
       );
 
@@ -248,7 +248,7 @@ const isMobile = width < 1100;
             userData._id
           );
           const response = await axios.get<ExtrasResponse>(
-            `${config.backendUrl}/cart/extras/${userData._id}`,
+            `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/extras/${userData._id}`,
            await getAuthHeaders()
           );
 
@@ -285,11 +285,11 @@ const isMobile = width < 1100;
 
       console.log(
         '[Cart.tsx] ▶︎ reFetchCart → GET',
-        `${config.backendUrl}/cart/${userData._id}`
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${userData._id}`
       );
 
       const cartRes = await axios.get<CartResponse>(
-        `${config.backendUrl}/cart/${userData._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${userData._id}`,
         await getAuthHeaders()
       );
 
@@ -348,7 +348,7 @@ const increaseQty = async (id: string) => {
       const authConfig = await getAuthHeaders();
 
       await axios.post(
-        `${config.backendUrl}/cart/add-one/${userData._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add-one/${userData._id}`,
         { itemId: id, kind: thisItem.kind },
         authConfig
       );
@@ -439,7 +439,7 @@ const decreaseQty = async (id: string) => {
       const headers = await getAuthHeaders(); // Ensure getAuthHeaders() is async if using AsyncStorage
 
       await axios.post(
-        `${config.backendUrl}/cart/remove-one/${userData._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/remove-one/${userData._id}`,
         { itemId: id, kind: thisItem.kind },
         headers
       );
@@ -508,7 +508,7 @@ const removeItem = async (id: string) => {
       const headers = await getAuthHeaders();
 
       await axios.post(
-        `${config.backendUrl}/cart/remove-item/${userData._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/remove-item/${userData._id}`,
         { itemId: id, kind: thisItem.kind },
         headers
       );
@@ -575,7 +575,7 @@ const addToCart = async (item: FoodItem) => {
       const headers = await getAuthHeaders();
 
       await axios.post(
-        `${config.backendUrl}/cart/add/${userData._id}`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add/${userData._id}`,
         {
           itemId: item._id,
           kind: item.kind,

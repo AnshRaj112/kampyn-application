@@ -74,7 +74,7 @@ export default function LoginScreen() {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        `${config.backendUrl}/api/user/auth/login`,
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/login`,
         { identifier, password },
         {
           headers: {

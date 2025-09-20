@@ -50,7 +50,7 @@ const inputRefs = useRef<Array<TextInput | null>>([]);
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${config.backendUrl}/api/user/auth/otpverification`, {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/otpverification`, {
         email,
         otp: fullOtp,
       });

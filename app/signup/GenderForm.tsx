@@ -19,7 +19,7 @@ import Toast from 'react-native-toast-message';
 import { CustomToast } from '../CustomToast';
 import Constants from 'expo-constants';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || 'http://192.168.1.10:5001';
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL as string;
 
 export default function GenderForm() {
   const { name, email, phone, type } = useLocalSearchParams();

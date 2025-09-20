@@ -172,7 +172,7 @@ const ActiveOrdersPageContent: React.FC = () => {
         router.replace("/login/LoginForm");
         return;
       }
-      const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(response.data);
@@ -194,7 +194,7 @@ const ActiveOrdersPageContent: React.FC = () => {
     if (!isAuthenticated) return;
     try {
       const configAuth = await getAuthConfig();
-      const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/list`, configAuth);
       setColleges(response.data);
     } catch (error) {
       console.error("Error fetching colleges:", error);
@@ -208,8 +208,8 @@ const ActiveOrdersPageContent: React.FC = () => {
       setLoading(true);
       const configAuth = await getAuthConfig();
       const url = selectedCollege
-        ? `${config.backendUrl}/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
-        : `${config.backendUrl}/order/user-active/${user._id}`;
+        ? `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
+        : `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/user-active/${user._id}`;
       const response = await axios.get(url, configAuth);
       setActiveOrders(response.data.orders || []);
     } catch (error) {

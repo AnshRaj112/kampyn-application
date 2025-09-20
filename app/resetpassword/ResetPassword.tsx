@@ -46,7 +46,7 @@ export default function ResetPasswordScreen() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${config.backendUrl}/api/user/auth/resetpassword`, {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/resetpassword`, {
         email,
         password,
       });

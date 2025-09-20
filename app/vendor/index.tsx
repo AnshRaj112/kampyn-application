@@ -62,7 +62,7 @@ const VendorPage = () => {
       setIsLoading(true);
       
       // Fetch vendor data
-      const vendorResponse = await fetch(`${config.backendUrl}/api/item/getvendors/${id}`);
+      const vendorResponse = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/getvendors/${id}`);
       const vendorData = await vendorResponse.json();
       
       if (vendorData.success) {
@@ -72,7 +72,7 @@ const VendorPage = () => {
       // Fetch user data
       const token = await getToken();
       if (token) {
-        const userResponse = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+        const userResponse = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -107,7 +107,7 @@ const VendorPage = () => {
 
     try {
       const token = await getToken();
-      const addResponse = await fetch(`${config.backendUrl}/cart/add/${userData._id}`, {
+      const addResponse = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add/${userData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ const VendorPage = () => {
 
       if (addResponse.ok) {
         // Refresh user data
-        const userResponse = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+        const userResponse = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -147,7 +147,7 @@ const VendorPage = () => {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/cart/add-one/${userData._id}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add-one/${userData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ const VendorPage = () => {
 
       if (response.ok) {
         // Refresh user data
-        const userResponse = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+        const userResponse = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -181,7 +181,7 @@ const VendorPage = () => {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/cart/remove-one/${userData._id}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/remove-one/${userData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ const VendorPage = () => {
 
       if (response.ok) {
         // Refresh user data
-        const userResponse = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+        const userResponse = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

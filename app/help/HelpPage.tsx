@@ -47,7 +47,7 @@ export default function Help() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${config.backendUrl}/contact`, {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/contact`, {
         name,
         email,
         message,

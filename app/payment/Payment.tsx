@@ -101,7 +101,7 @@ const PaymentPage = () => {
         
         // Fetch order details directly by orderId
         const orderResponse = await axios.get(
-          `${config.backendUrl}/order/${orderId}`,
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/${orderId}`,
           await getAuthConfig()
         );
 
@@ -114,7 +114,7 @@ const PaymentPage = () => {
           try {
             const vendorId = orderResponse.data.order.vendorId._id;
             const deliverySettingsResponse = await axios.get(
-              `${config.backendUrl}/api/vendor/${vendorId}/delivery-settings`
+              `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`
             );
             
             if (deliverySettingsResponse.data.success) {

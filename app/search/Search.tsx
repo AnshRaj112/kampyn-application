@@ -78,7 +78,7 @@ export default function SearchPage() {
 
         // Get user ID if logged in
         if (token) {
-          const response = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+          const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -104,7 +104,7 @@ export default function SearchPage() {
   const fetchCart = async (currentUserId: string) => {
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/cart/${currentUserId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${currentUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -171,8 +171,8 @@ export default function SearchPage() {
       }
 
       // Search both items and vendors
-      const itemsUrl = `${config.backendUrl}/api/item/search/items?query=${encodeURIComponent(query)}&uniID=${collegeId}&searchByType=true`;
-      const vendorsUrl = `${config.backendUrl}/api/item/search/vendors?query=${encodeURIComponent(query)}&uniID=${collegeId}`;
+      const itemsUrl = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/search/items?query=${encodeURIComponent(query)}&uniID=${collegeId}&searchByType=true`;
+      const vendorsUrl = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/search/vendors?query=${encodeURIComponent(query)}&uniID=${collegeId}`;
       
       console.log('🔗 Items URL:', itemsUrl);
       console.log('🔗 Vendors URL:', vendorsUrl);
@@ -236,7 +236,7 @@ export default function SearchPage() {
       const token = await getToken();
       if (!token) return [];
 
-      const response = await fetch(`${config.backendUrl}/api/item/vendors/${item._id}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/vendors/${item._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -293,7 +293,7 @@ export default function SearchPage() {
       const token = await getToken();
       if (!token || !userData) return;
 
-      const addResponse = await fetch(`${config.backendUrl}/cart/add/${userData._id}`, {
+      const addResponse = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add/${userData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -325,7 +325,7 @@ export default function SearchPage() {
       const token = await getToken();
       if (!token || !userData) return;
 
-      const response = await fetch(`${config.backendUrl}/cart/add-one/${userData._id}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add-one/${userData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +354,7 @@ export default function SearchPage() {
       const token = await getToken();
       if (!token || !userData) return;
 
-      const response = await fetch(`${config.backendUrl}/cart/remove-one/${userData._id}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/remove-one/${userData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

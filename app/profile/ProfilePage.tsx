@@ -18,7 +18,7 @@ import { getToken, removeToken } from '../../utils/storage';
 import { config } from '../../config';
 import Toast from 'react-native-toast-message';
 
-const BACKEND_URL = config.backendUrl;
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();

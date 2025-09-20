@@ -39,7 +39,7 @@ const CARD_WIDTH = (width - 60) / 2;
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await fetch(`${config.backendUrl}/api/user/auth/list`);
+        const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/list`);
         if (!response.ok) {
           throw new Error('Failed to fetch colleges');
         }

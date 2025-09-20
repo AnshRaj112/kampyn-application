@@ -126,7 +126,7 @@ export default function CollegePage() {
       }
 
       console.log('Fetching user data...');
-      const response = await fetch(`${config.backendUrl}/api/user/auth/user`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -166,8 +166,8 @@ export default function CollegePage() {
     try {
       // Fetch all retail and produce items for the university (like frontend)
       const [retailRes, produceRes] = await Promise.all([
-        fetch(`${config.backendUrl}/api/item/retail/uni/${uniId}?limit=1000`),
-        fetch(`${config.backendUrl}/api/item/produce/uni/${uniId}?limit=1000`),
+        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
+        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
       ]);
 
       const retailData = await retailRes.json();
@@ -264,9 +264,9 @@ export default function CollegePage() {
     try {
       // Fetch vendors and all items in parallel (like frontend)
       const [vendorsRes, retailRes, produceRes] = await Promise.all([
-        fetch(`${config.backendUrl}/api/vendor/list/uni/${uniId}`),
-        fetch(`${config.backendUrl}/api/item/retail/uni/${uniId}?limit=1000`),
-        fetch(`${config.backendUrl}/api/item/produce/uni/${uniId}?limit=1000`),
+        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/vendor/list/uni/${uniId}`),
+        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
+        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
       ]);
 
       const vendors = await vendorsRes.json();
@@ -363,7 +363,7 @@ export default function CollegePage() {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/fav/${currentUserId}/${uniId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/fav/${currentUserId}/${uniId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -401,7 +401,7 @@ export default function CollegePage() {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/cart/${currentUserId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/${currentUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -425,7 +425,7 @@ export default function CollegePage() {
   const checkItemAvailability = async (item: Item): Promise<Vendor[]> => {
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/api/item/vendors/${item._id}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/vendors/${item._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -493,7 +493,7 @@ export default function CollegePage() {
     try {
       const token = await getToken();
       const currentUserId = userId || await AsyncStorage.getItem('userId');
-      const response = await fetch(`${config.backendUrl}/cart/add/${currentUserId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -538,7 +538,7 @@ export default function CollegePage() {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/cart/remove-one/${currentUserId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/remove-one/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -562,7 +562,7 @@ export default function CollegePage() {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/cart/remove-one/${currentUserId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/remove-one/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -589,7 +589,7 @@ export default function CollegePage() {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${config.backendUrl}/cart/add-one/${currentUserId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/cart/add-one/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

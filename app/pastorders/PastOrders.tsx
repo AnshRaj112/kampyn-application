@@ -122,7 +122,7 @@ const PastOrdersPageContent = () => {
         router.push("/login/LoginForm");
         return;
       }
-      const response = await axios.get(`${config.backendUrl}/api/user/auth/user`, {
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(response.data);
@@ -144,7 +144,7 @@ const PastOrdersPageContent = () => {
     if (!isAuthenticated) return;
     try {
       const configAuth = await getAuthConfig();
-      const response = await axios.get(`${config.backendUrl}/api/user/auth/list`, configAuth);
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/list`, configAuth);
       setColleges(response.data);
     } catch (error) {
       console.error("Error fetching colleges:", error);
@@ -167,8 +167,8 @@ useEffect(() => {
     try {
       setLoading(true);
       const url = selectedCollege
-        ? `${config.backendUrl}/order/past/${user._id}?collegeId=${selectedCollege._id}`
-        : `${config.backendUrl}/order/past/${user._id}`;
+        ? `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/past/${user._id}?collegeId=${selectedCollege._id}`
+        : `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/past/${user._id}`;
 
       const response = await axios.get(url, await getAuthConfig());
       console.log('Past orders response:', response.data);
@@ -192,7 +192,7 @@ useEffect(() => {
     const fetchColleges = async () => {
       try {
         const response = await axios.get(
-          `${config.backendUrl}/api/user/auth/list`,
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/list`,
          await getAuthConfig()
         );
         setColleges(response.data);
@@ -215,8 +215,8 @@ useEffect(() => {
       try {
         setLoading(true);
         const url = selectedCollege
-          ? `${config.backendUrl}/order/past/${user._id}?collegeId=${selectedCollege._id}`
-          : `${config.backendUrl}/order/past/${user._id}`;
+          ? `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/past/${user._id}?collegeId=${selectedCollege._id}`
+          : `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/past/${user._id}`;
 
         const response = await axios.get(url, await getAuthConfig());
         console.log('Past orders response:', response.data);
@@ -316,8 +316,8 @@ const handleCollegeSelect = (college: College | null) => {
     try {
       setLoading(true);
       const url = selectedCollege
-        ? `${config.backendUrl}/order/past/${user._id}?collegeId=${selectedCollege._id}`
-        : `${config.backendUrl}/order/past/${user._id}`;
+        ? `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/past/${user._id}?collegeId=${selectedCollege._id}`
+        : `${process.env.EXPO_PUBLIC_BACKEND_URL}/order/past/${user._id}`;
       const response = await axios.get(url, await getAuthConfig());
       setPastOrders(response.data.orders || []);
     } catch (error) {
