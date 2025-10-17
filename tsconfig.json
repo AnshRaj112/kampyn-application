@@ -1,5 +1,12 @@
 {
   "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "ES2017",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
@@ -7,14 +14,20 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
-    "types": ["react-native"]
+    "types": [
+      "react-native",
+      "node"
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

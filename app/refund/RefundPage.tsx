@@ -22,7 +22,7 @@ export default function AboutUs() {
         <View style={styles.contentWrapper}>
           <Text style={styles.heading}>Refund & Cancellation Policy</Text>
           <Text style={styles.description}>
-            At BitesBay, we value transparency, accountability, and a smooth
+            At KAMPYN, we value transparency, accountability, and a smooth
             ordering experience. This policy clearly defines our stance on refunds,
             cancellations, and payment guidelines, ensuring fairness for users and
             food vendors across campus food courts.
@@ -101,7 +101,7 @@ export default function AboutUs() {
 
             <HoverCard title="Platform Integrity">
              <Text style={styles.cardText}>
-             BitesBay operates on mutual trust between users and food court
+             KAMPYN operates on mutual trust between users and food court
           vendors. Any misuse of platform functionality—such as:
                       </Text>
                       
@@ -148,7 +148,7 @@ export default function AboutUs() {
 
           <View style={styles.footerBox}>
             <Text style={styles.footer}>
-              Thank you for choosing BitesBay — empowering campuses with smarter
+              Thank you for choosing KAMPYN — empowering campuses with smarter
           food experiences.
           <br />
           Your cooperation helps us serve you better, every day.

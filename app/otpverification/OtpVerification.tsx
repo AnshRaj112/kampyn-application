@@ -62,6 +62,40 @@ const inputRefs = useRef<Array<TextInput | null>>([]);
       if (from === "forgotpassword") {
         router.push({ pathname: "/resetpassword/ResetPassword", params: { email } });
       } else {
+        // Get user data to determine university slug for redirect
+        try {
+          const userResponse = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
+            headers: { Authorization: `Bearer ${response.data.token}` },
+          });
+          
+          const userData = userResponse.data;
+          const uniId = userData?.uniID || userData?.college?._id;
+          
+          if (uniId) {
+            // Fetch college data to get the slug
+            const collegeResponse = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/list`);
+            const colleges = collegeResponse.data;
+            const userCollege = colleges.find((college: any) => college._id === uniId);
+            
+            if (userCollege) {
+              // Generate slug from college name
+              const generateSlug = (name: string): string => {
+                return name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-+|-+$/g, "");
+              };
+              const collegeSlug = generateSlug(userCollege.fullName);
+              console.log('Redirecting to home with college slug:', collegeSlug);
+              router.replace(`/home/${collegeSlug}`);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user data for redirect:", error);
+        }
+        
+        // Fallback to profile page
         router.replace("/profile/ProfilePage");
       }
     } catch (error: any) {

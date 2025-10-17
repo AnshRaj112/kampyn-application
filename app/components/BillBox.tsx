@@ -885,7 +885,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
             allowsFullscreenVideo={true}
             allowsProtectedMedia={true}
             allowsAirPlayForMediaPlayback={true}
-            onOpenWindow={(e) => {
+            onOpenWindow={(e: any) => {
               try {
                 const targetUrl = e.nativeEvent?.targetUrl;
                 console.log("🌐 WebView popup window requested:", targetUrl);
@@ -912,13 +912,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
             showsHorizontalScrollIndicator={false}
             showsVerticalScrollIndicator={false}
             // Better error handling
-            onError={(syntheticEvent) => {
+            onError={(syntheticEvent: any) => {
               const { nativeEvent } = syntheticEvent;
               console.error('❌ WebView error:', nativeEvent);
               Alert.alert("Error", "Failed to load payment gateway. Please try again.");
               setShowPaymentModal(false);
             }}
-            onHttpError={(syntheticEvent) => {
+            onHttpError={(syntheticEvent: any) => {
               const { nativeEvent } = syntheticEvent;
               console.error('❌ WebView HTTP error:', nativeEvent);
               Alert.alert("Error", "Payment gateway connection failed. Please try again.");
@@ -935,7 +935,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
               console.log("🔄 WebView loading started");
             }}
             // Handle navigation changes and capture verification URLs
-            onNavigationStateChange={(navState) => {
+            onNavigationStateChange={(navState: any) => {
               console.log("🌐 WebView navigation:", navState.url);
               
               // Store current URL for debugging
@@ -1020,7 +1020,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
               }
             }}
             // Handle load progress
-            onLoadProgress={(syntheticEvent) => {
+            onLoadProgress={(syntheticEvent: any) => {
               const { nativeEvent } = syntheticEvent;
               console.log("📊 WebView load progress:", nativeEvent.progress);
             }}
@@ -1084,7 +1084,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
               cacheEnabled={false}
               incognito={false}
               originWhitelist={['*']}
-              onNavigationStateChange={(navState) => {
+              onNavigationStateChange={(navState: any) => {
                 console.log("🌐 Popup WebView navigation:", navState.url);
                 
                 // Check if this is a payment success/failure page
@@ -1163,14 +1163,14 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
                   }
                 }
               }}
-              onError={(syntheticEvent) => {
+              onError={(syntheticEvent: any) => {
                 const { nativeEvent } = syntheticEvent;
                 console.error('❌ Popup WebView error:', nativeEvent);
                 Alert.alert("Error", "Failed to load payment confirmation page. Please try again.");
                 setShowPopupModal(false);
                 setPopupUrl("");
               }}
-              onHttpError={(syntheticEvent) => {
+              onHttpError={(syntheticEvent: any) => {
                 const { nativeEvent } = syntheticEvent;
                 console.error('❌ Popup WebView HTTP error:', nativeEvent);
                 Alert.alert("Error", "Payment confirmation page connection failed. Please try again.");

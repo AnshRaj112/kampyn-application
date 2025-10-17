@@ -100,6 +100,8 @@ const PastOrdersPageContent = () => {
 
   const [navigationReady, setNavigationReady] = useState(Platform.OS === 'web');
   const [refreshing, setRefreshing] = useState(false);
+  const [allowedReview, setAllowedReview] = useState<boolean>(false);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -127,6 +129,19 @@ const PastOrdersPageContent = () => {
       });
       setUser(response.data);
       setIsAuthenticated(true);
+
+      // Determine if Review service is enabled for user's university
+      try {
+        const uniId = response.data?.uniID || response.data?.college?._id;
+        if (uniId) {
+          const assignRes = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/university/universities/${uniId}/assignments`);
+          const services = assignRes.data?.data?.services || [];
+          const isAllowed = services.some((s: any) => String(s.name).toLowerCase().includes('review'));
+          setAllowedReview(!!isAllowed);
+        }
+      } catch (e) {
+        setAllowedReview(false);
+      }
     } catch (error) {
       console.error("Error fetching user details:", error);
       if (axios.isAxiosError(error) && error.response?.status === 403) {
@@ -465,15 +480,33 @@ return (
                 >
                   {order.status?.toUpperCase()}
                 </Text>
-
-                {/* <View style={styles.actions}>
-                  <TouchableOpacity style={styles.rateButton}>
-                    <Text style={styles.rateText}>Rate</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.reorderButton}>
-                    <Text style={styles.reorderText}>Re-Order</Text>
-                  </TouchableOpacity>
-                </View> */}
+                {allowedReview && (
+                  <View style={styles.actions}>
+                    <TouchableOpacity
+                      style={styles.rateButton}
+                      disabled={submittingId === order._id}
+                      onPress={async () => {
+                        // simple quick rating: 5 stars, no comment (can be expanded later)
+                        try {
+                          setSubmittingId(order._id);
+                          const token = await getAuthToken();
+                          await axios.post(
+                            `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/reviews/order/${order._id}`,
+                            { rating: 5, comment: '' },
+                            { headers: { Authorization: `Bearer ${token}` } }
+                          );
+                          Toast.show({ type: 'success', text1: 'Review submitted' });
+                        } catch (e) {
+                          Toast.show({ type: 'error', text1: 'Failed to submit review' });
+                        } finally {
+                          setSubmittingId(null);
+                        }
+                      }}
+                    >
+                      <Text style={styles.rateText}>{submittingId === order._id ? 'Submitting…' : 'Rate 5★'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           )}

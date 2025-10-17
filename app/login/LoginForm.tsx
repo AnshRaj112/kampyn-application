@@ -112,7 +112,40 @@ export default function LoginScreen() {
 
         // Navigate after a short delay
         console.log('Initiating navigation to home...');
-        // Navigate immediately after successful login
+        // Get user data to determine university slug for redirect
+        try {
+          const userResponse = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          const userData = userResponse.data;
+          const uniId = userData?.uniID || userData?.college?._id;
+          
+          if (uniId) {
+            // Fetch college data to get the slug
+            const collegeResponse = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/auth/list`);
+            const colleges = collegeResponse.data;
+            const userCollege = colleges.find((college: any) => college._id === uniId);
+            
+            if (userCollege) {
+              // Generate slug from college name
+              const generateSlug = (name: string): string => {
+                return name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-+|-+$/g, "");
+              };
+              const collegeSlug = generateSlug(userCollege.fullName);
+              console.log('Executing navigation to home with college slug:', collegeSlug);
+              router.replace(`/home/${collegeSlug}`);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user data for redirect:", error);
+        }
+        
+        // Fallback to generic home page
         console.log('Executing navigation to home');
         router.replace('/home');
       } catch (storageError) {
