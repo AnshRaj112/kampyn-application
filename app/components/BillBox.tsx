@@ -620,7 +620,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
                   amount: ${razorpayOptions.amount},
                   currency: "${razorpayOptions.currency}",
                   order_id: "${razorpayOptions.order_id}",
-                  name: "KIITBites",
+                  name: "KAMPYN",
                   description: "Complete your payment",
                   prefill: {
                     name: "${name.replace(/"/g, '\\"')}",
@@ -665,7 +665,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }: Props): React.Reac
                     }
                   },
                   notes: {
-                    "address": "KIITBites Food Order",
+                    "address": "KAMPYN Food Order",
                     "merchant_order_id": "${razorpayOptions.order_id}"
                   }
                 };
