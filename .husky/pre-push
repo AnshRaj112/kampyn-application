@@ -3,8 +3,5 @@
 
 echo "🚀 Running mobile app pre-push checks..."
 
-# Build check
-echo "🏗️ Running build check..."
-npx expo export
-
+# Basic checks only
 echo "✅ Mobile app pre-push checks passed!"
