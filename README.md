@@ -141,4 +141,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**© 2025 EXSOLVIA. All rights reserved.**
+**© 2025 EXSOLVIA. All rights reserved.**# Testing mobile app without tests
