@@ -47,13 +47,13 @@
       "backendUrl": "https://bitesbay-backend.onrender.com",
       "router": {},
       "eas": {
-        "projectId": "f94c7f57-7d22-4c3c-b063-f38b23ddd576"
+        "projectId": "6885de49-110a-47f2-a78c-6031ac5e0357"
       }
     },
     "owner": "anshraj112",
     "runtimeVersion": "1.0.0",
     "updates": {
-      "url": "https://u.expo.dev/f94c7f57-7d22-4c3c-b063-f38b23ddd576"
+      "url": "https://u.expo.dev/6885de49-110a-47f2-a78c-6031ac5e0357"
     }
   }
 }
