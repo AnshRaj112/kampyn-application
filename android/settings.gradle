@@ -33,7 +33,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 // Ensure Expo modules are properly configured
 expoAutolinking.useExpoModules()
 
-rootProject.name = 'kiitbites-application'
+rootProject.name = 'kampyn'
 
 expoAutolinking.useExpoVersionCatalog()
 

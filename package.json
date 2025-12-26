@@ -1,5 +1,5 @@
 {
-  "name": "kiitbites-application",
+  "name": "kampyn",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -64,8 +64,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "git add"
+      "npx expo lint --fix"
     ]
   },
   "private": true

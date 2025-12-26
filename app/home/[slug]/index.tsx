@@ -13,9 +13,9 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getToken } from '../../utils/storage';
+import { getToken } from '../../../utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { config } from '../../config';
+import { config } from '../../../config';
 import VendorModal from './VendorModal';
 
 interface Item {
@@ -55,6 +55,27 @@ interface Vendor {
     isSpecial?: string;
   };
 }
+
+// Helper function for fetch with timeout (useful for mobile networks)
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout: number = 15000): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeout}ms`);
+    }
+    throw error;
+  }
+};
 
 export default function CollegePage() {
   const router = useRouter();
@@ -262,19 +283,73 @@ export default function CollegePage() {
 
   const fetchSpecialItems = async (uniId: string, retailItems: Item[], produceItems: Item[]) => {
     try {
-      // Fetch vendors and all items in parallel (like frontend)
+      console.log('Fetching special items for uniId:', uniId);
+      console.log('Backend URL:', process.env.EXPO_PUBLIC_BACKEND_URL);
+      
+      // Fetch vendors and all items in parallel (like frontend) with timeout
       const [vendorsRes, retailRes, produceRes] = await Promise.all([
-        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/vendor/list/uni/${uniId}`),
-        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
-        fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
+        fetchWithTimeout(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/vendor/list/uni/${uniId}`, {}, 15000).catch(err => {
+          console.error('Vendor fetch error:', err);
+          throw new Error(`Vendor fetch failed: ${err.message}`);
+        }),
+        fetchWithTimeout(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`, {}, 15000).catch(err => {
+          console.error('Retail fetch error:', err);
+          throw new Error(`Retail fetch failed: ${err.message}`);
+        }),
+        fetchWithTimeout(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`, {}, 15000).catch(err => {
+          console.error('Produce fetch error:', err);
+          throw new Error(`Produce fetch failed: ${err.message}`);
+        }),
       ]);
 
-      const vendors = await vendorsRes.json();
-      const retailData = await retailRes.json();
-      const produceData = await produceRes.json();
+      // Check response statuses before parsing JSON
+      if (!vendorsRes.ok) {
+        const errorText = await vendorsRes.text().catch(() => 'Unable to read error response');
+        console.error('Vendor API error:', vendorsRes.status, errorText);
+        throw new Error(`Failed to fetch vendors: ${vendorsRes.status} - ${errorText.substring(0, 100)}`);
+      }
 
-      if (!vendorsRes.ok || !retailRes.ok || !produceRes.ok) {
-        throw new Error("Failed to fetch vendor or item data");
+      if (!retailRes.ok) {
+        const errorText = await retailRes.text().catch(() => 'Unable to read error response');
+        console.error('Retail API error:', retailRes.status, errorText);
+        throw new Error(`Failed to fetch retail items: ${retailRes.status} - ${errorText.substring(0, 100)}`);
+      }
+
+      if (!produceRes.ok) {
+        const errorText = await produceRes.text().catch(() => 'Unable to read error response');
+        console.error('Produce API error:', produceRes.status, errorText);
+        throw new Error(`Failed to fetch produce items: ${produceRes.status} - ${errorText.substring(0, 100)}`);
+      }
+
+      // Parse JSON responses
+      let vendors, retailData, produceData;
+      try {
+        vendors = await vendorsRes.json();
+      } catch (err) {
+        console.error('Failed to parse vendors JSON:', err);
+        throw new Error('Invalid JSON response from vendors API');
+      }
+
+      try {
+        retailData = await retailRes.json();
+      } catch (err) {
+        console.error('Failed to parse retail JSON:', err);
+        throw new Error('Invalid JSON response from retail API');
+      }
+
+      try {
+        produceData = await produceRes.json();
+      } catch (err) {
+        console.error('Failed to parse produce JSON:', err);
+        throw new Error('Invalid JSON response from produce API');
+      }
+
+      // Ensure vendors is an array (handle both array and object responses)
+      const vendorsArray = Array.isArray(vendors) ? vendors : (vendors?.vendors || vendors?.data || []);
+      
+      if (!Array.isArray(vendorsArray)) {
+        console.error('Vendors is not an array:', vendors);
+        throw new Error('Invalid vendors data format');
       }
 
       // Create lookup maps for items
@@ -291,7 +366,7 @@ export default function CollegePage() {
 
       const specials: Item[] = [];
 
-      vendors.forEach((vendor: any) => {
+      vendorsArray.forEach((vendor: any) => {
         // Process retail inventory
         (vendor.retailInventory || []).forEach((entry: any) => {
           if (entry.isSpecial && entry.isSpecial === 'Y') {
@@ -339,7 +414,7 @@ export default function CollegePage() {
       console.log('Fetched special items:', {
         count: specials.length,
         specials: specials,
-        vendors: vendors.length,
+        vendors: vendorsArray.length,
         retailData: retailData,
         produceData: produceData
       });
@@ -1596,4 +1671,5 @@ topRight: {
     paddingVertical: 50,
   },
 
-});  
+});
+

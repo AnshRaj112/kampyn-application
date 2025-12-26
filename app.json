@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "kiitbites-application",
-    "slug": "kiitbites-application",
+    "name": "KAMPYN",
+    "slug": "kampyn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.fatedeath.kiitbitesapplication"
+      "package": "com.anshraj112.kampyn"
     },
     "web": {
       "bundler": "metro",
