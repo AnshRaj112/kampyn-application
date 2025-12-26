@@ -1,0 +1,62 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+// Handle SDK path for CI/CD environments
+// This runs early to ensure SDK path is set before Android Gradle Plugin checks for it
+def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+def localProperties = new Properties()
+
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { stream ->
+        localProperties.load(stream)
+    }
+}
+
+def sdkDir = localProperties.getProperty('sdk.dir')
+def sdkDirFile = sdkDir ? new File(sdkDir) : null
+
+// If sdk.dir is not set, empty, or doesn't exist, try to get it from environment variables
+if (!sdkDir || sdkDir.trim().isEmpty() || (sdkDirFile && !sdkDirFile.exists())) {
+    def androidHome = System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT')
+    if (androidHome) {
+        def androidHomeFile = new File(androidHome)
+        if (androidHomeFile.exists() && localPropertiesFile.canWrite()) {
+            try {
+                // Update local.properties with the SDK path from environment variable
+                localProperties.setProperty('sdk.dir', androidHome)
+                localProperties.store(localPropertiesFile.newWriter(), null)
+                println "Updated local.properties with SDK path from environment: $androidHome"
+            } catch (Exception e) {
+                println "Note: Could not update local.properties: ${e.message}"
+            }
+        } else if (androidHomeFile.exists()) {
+            // SDK exists but can't write to local.properties - set it as a system property
+            System.setProperty('android.sdk.dir', androidHome)
+            println "Using SDK from environment variable: $androidHome"
+        }
+    }
+}
+
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    // ✅ PIN versions – do NOT leave them floating
+    classpath("com.android.tools.build:gradle:8.5.2")
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25")
+    classpath("com.facebook.react:react-native-gradle-plugin")
+  }
+}
+
+
+allprojects {
+  repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://www.jitpack.io' }
+  }
+}
+
+apply plugin: "expo-root-project"
+apply plugin: "com.facebook.react.rootproject"
